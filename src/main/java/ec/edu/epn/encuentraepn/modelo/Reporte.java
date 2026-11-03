@@ -108,6 +108,13 @@ public class Reporte {
     }
 
     /**
+     * HU-19: si la entrega acordada no se realizó, el objeto reservado vuelve a estar disponible en el mapa.
+     */
+    public void liberar() {
+        cambiarEstado(EstadoReporte.RESERVADO, EstadoReporte.ACTIVO);
+    }
+
+    /**
      * HU-11: quien registró el reporte lo retira y deja de aparecer en el mapa.
      */
     public void retirar() {

@@ -43,6 +43,19 @@ class CancelacionTest {
     }
 
     @Test
+    @DisplayName("Liberar un reporte reservado lo deja ACTIVO otra vez; uno activo no se puede liberar")
+    void liberarUnReporteReservado() {
+        Reporte reporte = reclamacionPendiente().getObjeto();
+        reporte.publicar();
+        reporte.reservar();
+
+        reporte.liberar();
+
+        assertEquals(EstadoReporte.ACTIVO, reporte.getEstado());
+        assertThrows(IllegalStateException.class, reporte::liberar);
+    }
+
+    @Test
     @DisplayName("Sin motivo no se puede cancelar la entrega")
     void sinMotivoNoSeCancela() {
         Reclamacion reclamacion = reclamacionPendiente();

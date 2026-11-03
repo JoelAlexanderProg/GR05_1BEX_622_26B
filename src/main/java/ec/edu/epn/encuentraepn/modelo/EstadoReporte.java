@@ -2,7 +2,8 @@ package ec.edu.epn.encuentraepn.modelo;
 
 /**
  * Estados de un reporte: BORRADOR → ACTIVO → RESERVADO → ENTREGADO.
- * Un reporte ACTIVO también puede quedar RETIRADO por su autor (HU-11).
+ * Un reporte ACTIVO también puede quedar RETIRADO por su autor (HU-11), y uno RESERVADO vuelve a
+ * ACTIVO si su entrega se cancela (HU-19).
  */
 public enum EstadoReporte {
 
