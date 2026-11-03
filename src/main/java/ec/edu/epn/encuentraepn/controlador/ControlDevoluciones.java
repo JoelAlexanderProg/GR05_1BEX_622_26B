@@ -92,6 +92,10 @@ public class ControlDevoluciones extends ControlBase {
             confirmarDevolucion(actor, id, ahora());
             // SEC-04 · 44-45: devolución registrada → confirmación de devolución
             redirigir(request, response, "/devoluciones?reclamacion=" + id);
+        } else if ("cancelar".equals(accion)) {
+            // HU-19: cancelarEntrega(actor, id, motivo); el objeto vuelve a estar disponible
+            cancelarEntrega(actor, id, request.getParameter("motivoCancelacion"));
+            redirigir(request, response, "/devoluciones?reclamacion=" + id);
         } else if ("rechazar".equals(accion)) {
             // Incremento 3: rechazarReclamacion(actor, id, motivo); las reglas de la entidad se muestran como error
             try {
@@ -148,6 +152,25 @@ public class ControlDevoluciones extends ControlBase {
         reclamacionDAO.actualizar(reclamacion);
         // HU-18: el reclamante recibe un aviso con el motivo
         avisoDAO.guardar(Aviso.reclamacionRechazada(reclamacion));
+    }
+
+    /**
+     * HU-19: quien encontró el objeto cancela una entrega acordada que no se realizó. La reclamación queda
+     * CANCELADA con el motivo y el objeto vuelve a estar ACTIVO para otras reclamaciones.
+     */
+    public void cancelarEntrega(Usuario actor, UUID id, String motivo) {
+        Reclamacion reclamacion = buscarReclamacionRecibida(actor, id);
+        if (!reclamacion.estaAceptada()) {
+            throw new OperacionInvalidaException("Solo se puede cancelar una entrega que todavía no se realizó.");
+        }
+        try {
+            reclamacion.cancelar(motivo);
+        } catch (IllegalArgumentException e) {
+            throw new OperacionInvalidaException(e.getMessage());
+        }
+        reclamacion.getObjeto().liberar();
+        // La cancelación y la liberación del objeto se guardan en una sola transacción
+        reclamacionDAO.actualizar(reclamacion);
     }
 
     public AcuerdoEntrega proponerEntrega(Usuario actor, UUID id, String lugar, LocalDateTime fecha) {
