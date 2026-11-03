@@ -78,7 +78,8 @@
         </table>
     </c:if>
 
-    <h2>Mis reclamaciones</h2>
+    <%-- HU-18: los avisos de la reclamación llevan a esta sección --%>
+    <h2 id="reclamaciones">Mis reclamaciones</h2>
     <c:choose>
         <c:when test="${empty misReclamaciones}">
             <p class="vacio">Todavía no ha reclamado objetos.</p>

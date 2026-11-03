@@ -61,28 +61,30 @@ public class Aviso {
                 "/reportes/detalle?id=" + encontrado.getId());
     }
 
+    /** HU-18: enlace a «Mis reclamaciones» en la página de inicio. */
+    public static final String MIS_RECLAMACIONES = "/inicio#reclamaciones";
+
     /** HU-18: avisa al reclamante que su reclamación fue aceptada. */
     public static Aviso reclamacionAceptada(Reclamacion reclamacion) {
-        return paraReclamante(reclamacion, "Su reclamación de «" + objetoDe(reclamacion)
-                + "» fue aceptada. Pronto recibirá la propuesta de entrega.");
+        return new Aviso(reclamacion.getReclamante(), "Su reclamación de «" + objetoDe(reclamacion)
+                + "» fue aceptada. Pronto recibirá la propuesta de entrega.", MIS_RECLAMACIONES);
     }
 
     /** HU-18: avisa al reclamante que su reclamación fue rechazada, con el motivo. */
     public static Aviso reclamacionRechazada(Reclamacion reclamacion) {
-        return paraReclamante(reclamacion, "Su reclamación de «" + objetoDe(reclamacion)
-                + "» fue rechazada. Motivo: " + reclamacion.getMotivoRechazo());
+        return new Aviso(reclamacion.getReclamante(), "Su reclamación de «" + objetoDe(reclamacion)
+                + "» fue rechazada. Motivo: " + reclamacion.getMotivoRechazo(), MIS_RECLAMACIONES);
     }
 
-    /** HU-18: avisa al reclamante el lugar y la fecha propuestos para la entrega, para que confirme el acuerdo. */
+    /**
+     * HU-18: avisa al reclamante el lugar y la fecha propuestos para la entrega. El enlace lo lleva al acuerdo
+     * para confirmarlo.
+     */
     public static Aviso entregaPropuesta(AcuerdoEntrega acuerdo) {
         Reclamacion reclamacion = acuerdo.getReclamacion();
-        return paraReclamante(reclamacion, "Le propusieron entregarle «" + objetoDe(reclamacion) + "» en "
+        return new Aviso(reclamacion.getReclamante(), "Le propusieron entregarle «" + objetoDe(reclamacion) + "» en "
                 + acuerdo.getLugar() + " el " + acuerdo.getFechaPropuesta().toString().replace('T', ' ')
-                + ". Confirme el acuerdo de entrega.");
-    }
-
-    private static Aviso paraReclamante(Reclamacion reclamacion, String texto) {
-        return new Aviso(reclamacion.getReclamante(), texto, "/inicio");
+                + ". Confirme el acuerdo de entrega.", "/devoluciones?acuerdo=" + reclamacion.getId());
     }
 
     private static String objetoDe(Reclamacion reclamacion) {

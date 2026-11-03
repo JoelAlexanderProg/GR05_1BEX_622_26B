@@ -17,16 +17,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AvisoReclamacionTest {
 
     /**
-     * Prueba con parámetros: cada fila es un cambio de la reclamación y el texto que debe leer el reclamante.
+     * Prueba con parámetros: cada fila es un cambio de la reclamación, el texto que debe leer el reclamante y la
+     * página a la que lo lleva el aviso.
      */
-    @ParameterizedTest(name = "{0}: «{1}»")
+    @ParameterizedTest(name = "{0}: «{1}» → {2}")
     @CsvSource(delimiter = '|', value = {
-            "aceptada  | Su reclamación de «Calculadora científica negra» fue aceptada.",
-            "rechazada | fue rechazada. Motivo: Las respuestas no coinciden con el objeto",
-            "propuesta | Le propusieron entregarle «Calculadora científica negra» en Biblioteca Central el 2026-11-10 10:00."
+            "aceptada  | Su reclamación de «Calculadora científica negra» fue aceptada.                                | /inicio#reclamaciones",
+            "rechazada | fue rechazada. Motivo: Las respuestas no coinciden con el objeto                              | /inicio#reclamaciones",
+            "propuesta | Le propusieron entregarle «Calculadora científica negra» en Biblioteca Central el 2026-11-10 10:00. | /devoluciones?acuerdo="
     })
-    @DisplayName("Cada cambio de la reclamación le deja al reclamante un aviso con el texto que corresponde")
-    void avisoDeCadaCambio(String cambio, String textoEsperado) {
+    @DisplayName("Cada cambio de la reclamación le deja al reclamante un aviso con su texto y su enlace")
+    void avisoDeCadaCambio(String cambio, String textoEsperado, String enlaceEsperado) {
         Reclamacion reclamacion = reclamacionPendiente();
         Aviso aviso = switch (cambio) {
             case "aceptada" -> {
@@ -46,5 +47,6 @@ class AvisoReclamacionTest {
 
         assertEquals(reclamacion.getReclamante(), aviso.getDestinatario());
         assertTrue(aviso.getTexto().contains(textoEsperado), aviso.getTexto());
+        assertTrue(aviso.getEnlace().startsWith(enlaceEsperado), aviso.getEnlace());
     }
 }
