@@ -20,6 +20,8 @@
     <div class="sesion">
         <c:choose>
             <c:when test="${not empty sessionScope.usuario}">
+                <%-- HU-16: bandeja de avisos del usuario identificado --%>
+                <a id="enlaceAvisos" href="${ctx}/avisos">Avisos</a>
                 <span><c:out value="${sessionScope.usuario.nombre}"/></span>
                 <a href="${ctx}/salir">Salir</a>
             </c:when>

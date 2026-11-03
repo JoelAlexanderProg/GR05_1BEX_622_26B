@@ -304,6 +304,29 @@ td.enlaces form {
     cursor: pointer;
 }
 
+/* ---------- Avisos (HU-16) ---------- */
+.avisos {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.avisos li {
+    display: grid;
+    gap: 2px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #d8dee6;
+}
+
+.avisos p {
+    margin: 0;
+}
+
+.avisos a {
+    color: #12355b;
+    font-weight: 600;
+}
+
 @media (max-width: 760px) {
     .dos-columnas {
         grid-template-columns: 1fr;
