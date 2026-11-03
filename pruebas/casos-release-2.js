@@ -185,6 +185,40 @@ SECCIONES.push(async ({ sesion }) => {
     error.includes('Este reporte de pérdida ya no está activo.') && !misReportes.includes('Carnet'));
 });
 
+// ---------------------------------------------------------------------------------------------- HU-16
+SECCIONES.push(async ({ sesion }) => {
+  caso('HU-16', 'Recibir un aviso cuando se reporta un objeto que coincide con mi pérdida');
+  const elena = await sesion({ nombre: 'Elena Vega', correo: 'elena.vega@epn.edu.ec' });
+  const fabian = await sesion({ nombre: 'Fabián Torres', correo: 'fabian.torres@epn.edu.ec' });
+  // Elena pierde una chompa al este del campus, lejos de los objetos de las otras historias
+  await registrarReporte(elena, { tipo: 'PERDIDO', categoria: 'Ropa y accesorios',
+    descripcion: 'Chompa azul de la EPN', fecha: haceDias(4), punto: aMetros(480) });
+  const encontrado = (descripcion, categoria, metros) => registrarReporte(fabian, { tipo: 'ENCONTRADO',
+    categoria, descripcion, fecha: haceDias(2), punto: aMetros(metros), preguntas: ['¿Qué talla es?'] });
+
+  await encontrado('Chompa azul en una banca', 'Ropa y accesorios', 450);
+  await ir(elena, '/avisos');
+  let avisos = await textos(elena, '#avisos li');
+  await captura(elena, 'hu16-aviso-coincidencia.png');
+  paso(1, 'Elena tiene en «Mis avisos» el aviso de coincidencia con un enlace al reporte de Fabián',
+    avisos.length === 1 && avisos[0].includes('«Chompa azul de la EPN»') && avisos[0].includes('«Chompa azul en una banca»')
+    && await existe(elena, '#avisos a[href*="/reportes/detalle?id="]'));
+
+  await encontrado('Llavero con forma de búho', 'Llaves', 480);
+  await ir(elena, '/avisos');
+  avisos = await textos(elena, '#avisos li');
+  paso(2, 'Las llaves encontradas en el mismo lugar no generan aviso para Elena', avisos.length === 1);
+
+  await encontrado('Chompa azul talla M', 'Ropa y accesorios', 500);
+  await ir(elena, '/avisos');
+  avisos = await textos(elena, '#avisos li');
+  const conFecha = await elena.$$eval('#avisos li .fecha', (fs) => fs.every((f) => /\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(f.textContent)));
+  await captura(elena, 'hu16-avisos-ordenados.png');
+  paso(3, 'Con dos avisos, el más reciente (chompa talla M) aparece primero, cada uno con su fecha y su enlace',
+    avisos.length === 2 && avisos[0].includes('Chompa azul talla M') && avisos[1].includes('Chompa azul en una banca')
+    && conFecha && (await elena.$$('#avisos li a')).length === 2);
+});
+
 (async () => {
   fs.mkdirSync(SALIDA, { recursive: true });
   const navegador = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--lang=es-EC'] });
