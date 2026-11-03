@@ -1,5 +1,6 @@
 package ec.edu.epn.encuentraepn.controlador;
 
+import ec.edu.epn.encuentraepn.dao.AvisoDAO;
 import ec.edu.epn.encuentraepn.modelo.TipoReporte;
 import ec.edu.epn.encuentraepn.modelo.Usuario;
 import ec.edu.epn.encuentraepn.web.SesionUsuario;
@@ -87,6 +88,11 @@ public abstract class ControlBase extends HttpServlet {
 
     protected void mostrar(String vista, HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        // HU-17: la barra superior de cada página muestra cuántos avisos tiene el usuario sin leer
+        Usuario actor = actor(request);
+        if (actor != null) {
+            request.setAttribute("avisosSinLeer", new AvisoDAO().contarSinLeer(actor));
+        }
         request.getRequestDispatcher(VISTAS + vista).forward(request, response);
     }
 

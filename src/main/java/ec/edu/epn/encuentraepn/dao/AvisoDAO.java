@@ -23,6 +23,15 @@ public class AvisoDAO extends GenericDAO<Aviso> {
                 .getResultList();
     }
 
+    /** HU-17: cantidad de avisos que el usuario todavía no ha visto. */
+    public long contarSinLeer(Usuario destinatario) {
+        return em()
+                .createQuery("SELECT COUNT(a) FROM Aviso a WHERE a.destinatario = :destinatario AND a.leido = false",
+                        Long.class)
+                .setParameter("destinatario", destinatario)
+                .getSingleResult();
+    }
+
     /** HU-17: guarda en una sola transacción los avisos que se marcaron como leídos. */
     public void marcarLeidos(List<Aviso> avisos) {
         enTransaccion(em -> avisos.forEach(aviso -> {
