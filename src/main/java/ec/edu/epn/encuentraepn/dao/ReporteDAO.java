@@ -52,6 +52,13 @@ public class ReporteDAO extends GenericDAO<Reporte> {
         return listarActivos(TipoReporte.ENCONTRADO, categoria);
     }
 
+    /**
+     * HU-16: objetos perdidos que siguen activos en la categoría indicada.
+     */
+    public List<Reporte> listarPerdidosActivos(Categoria categoria) {
+        return listarActivos(TipoReporte.PERDIDO, categoria);
+    }
+
     private List<Reporte> listarActivos(TipoReporte tipo, Categoria categoria) {
         return em()
                 .createQuery("SELECT r FROM Reporte r WHERE r.estado = :estado AND r.tipo = :tipo "
