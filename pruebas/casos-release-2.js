@@ -1,0 +1,166 @@
+// Pruebas de aceptación del Release 2 (Examen 1B): comprueban en el navegador los tres escenarios de cada
+// historia de usuario (HU-14 a HU-21). Cada historia usa sus propias personas y sus propios objetos, para que
+// los avisos y las coincidencias de una no cambien el resultado de otra.
+//
+// Uso:      npm install puppeteer-core
+//           node casos-release-2.js <carpeta de capturas> [URL base]
+// Requiere: Node.js y Google Chrome. La aplicación debe estar en ejecución con la base de datos vacía
+//           (solo con las categorías). Al final escribe resultados.json en la carpeta de capturas.
+const puppeteer = require('puppeteer-core');
+const fs = require('fs');
+const path = require('path');
+
+const SALIDA = process.argv[2] || 'capturas';
+const BASE = process.argv[3] || 'http://localhost:8080';
+const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
+
+// Lugar de referencia en la zona Centro del campus y metros que hay en un grado de longitud junto al ecuador
+const ORIGEN = { latitud: -0.2100, longitud: -78.4900 };
+const METROS_POR_GRADO = 111195;
+
+const resultados = [];
+let casoActual = null;
+
+function caso(id, nombre) {
+  casoActual = { id, nombre, pasos: [] };
+  resultados.push(casoActual);
+  console.log(`\n${id} ${nombre}`);
+}
+
+function paso(numero, esperado, cumple) {
+  casoActual.pasos.push({ numero, esperado, cumple: Boolean(cumple) });
+  console.log(`  ${cumple ? 'ok   ' : 'FALLO'} escenario ${numero}: ${esperado}`);
+}
+
+/** Punto a los metros indicados al este del lugar de referencia. */
+const aMetros = (metros) => ({ latitud: ORIGEN.latitud, longitud: ORIGEN.longitud + metros / METROS_POR_GRADO });
+
+/** Fecha (aaaa-mm-dd) de hace los días indicados. */
+function haceDias(dias) {
+  const fecha = new Date();
+  fecha.setDate(fecha.getDate() - dias);
+  return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
+}
+
+const textoDe = (page, selector) => page.$eval(selector, (e) => e.innerText.trim()).catch(() => '');
+const existe = async (page, selector) => (await page.$(selector)) !== null;
+const textos = (page, selector) => page.$$eval(selector, (es) => es.map((e) => e.innerText.replace(/\s+/g, ' ').trim()));
+
+async function esperarMapa(page) {
+  if (await existe(page, '#mapa')) {
+    await page.waitForNetworkIdle({ idleTime: 600, timeout: 15000 }).catch(() => {});
+  }
+}
+
+async function captura(page, nombre) {
+  await esperarMapa(page);
+  await page.screenshot({ path: path.join(SALIDA, nombre), fullPage: true });
+}
+
+async function ir(page, ruta) {
+  await page.goto(BASE + ruta, { waitUntil: 'domcontentloaded' });
+}
+
+async function enviar(page, selector) {
+  await Promise.all([page.waitForNavigation({ waitUntil: 'domcontentloaded' }), page.click(selector)]);
+}
+
+async function identificar(page, usuario) {
+  await ir(page, '/identificacion');
+  await page.type('#nombre', usuario.nombre);
+  await page.type('#correo', usuario.correo);
+  await enviar(page, 'form.formulario button[type="submit"]');
+}
+
+async function marcarEnMapa(page, punto) {
+  await page.$eval('#mapa', (m) => m.scrollIntoView({ block: 'center' }));
+  await esperarMapa(page);
+  const posicion = await page.evaluate((p) => {
+    const marco = document.getElementById('mapa').getBoundingClientRect();
+    const pixel = mapa.latLngToContainerPoint([p.latitud, p.longitud]);
+    return { x: marco.x + pixel.x, y: marco.y + pixel.y };
+  }, punto);
+  await page.mouse.click(posicion.x, posicion.y);
+}
+
+/** Llena el formulario de registro (ya abierto) y lo publica. Devuelve el identificador del reporte. */
+async function completarReporte(page, datos) {
+  if (datos.tipo) await page.click(`input[name="tipo"][value="${datos.tipo}"]`);
+  if (datos.categoria) {
+    const categoria = await page.$$eval('#categoria option', (opciones, nombre) =>
+      opciones.find((o) => o.textContent.trim() === nombre).value, datos.categoria);
+    await page.select('#categoria', categoria);
+  }
+  await page.type('#descripcion', datos.descripcion);
+  await page.$eval('#fecha', (campo, fecha) => { campo.value = fecha; }, datos.fecha);
+  await marcarEnMapa(page, datos.punto);
+  const campos = await page.$$('input[name="pregunta"]');
+  for (let i = 0; i < (datos.preguntas || []).length; i += 1) {
+    await campos[i].type(datos.preguntas[i]);
+  }
+  await enviar(page, 'form.formulario button[type="submit"]');
+  return new URL(page.url()).searchParams.get('registrado');
+}
+
+async function registrarReporte(page, datos) {
+  await ir(page, '/reportes/nuevo');
+  return completarReporte(page, datos);
+}
+
+const SECCIONES = [];
+
+// ---------------------------------------------------------------------------------------------- HU-14
+SECCIONES.push(async ({ sesion }) => {
+  caso('HU-14', 'Ver los objetos encontrados que coinciden con mi objeto perdido');
+  const andrea = await sesion({ nombre: 'Andrea Paz', correo: 'andrea.paz@epn.edu.ec' });
+  const bruno = await sesion({ nombre: 'Bruno Salas', correo: 'bruno.salas@epn.edu.ec' });
+  const idPerdido = await registrarReporte(andrea, { tipo: 'PERDIDO', categoria: 'Calculadoras',
+    descripcion: 'Calculadora Casio gris', fecha: haceDias(40), punto: aMetros(0) });
+  const encontrado = (descripcion, categoria, metros, dias) => registrarReporte(bruno, { tipo: 'ENCONTRADO',
+    categoria, descripcion, fecha: haceDias(dias), punto: aMetros(metros), preguntas: ['¿Qué tiene escrito atrás?'] });
+  await encontrado('Calculadora con estuche azul', 'Calculadoras', 150, 37);
+  await encontrado('Calculadora gris sin tapa', 'Calculadoras', 40, 38);
+  await encontrado('Llaves de casillero', 'Llaves', 20, 38);
+  await encontrado('Calculadora del laboratorio', 'Calculadoras', 350, 38);
+  await encontrado('Calculadora olvidada en el aula', 'Calculadoras', 30, 5);
+
+  await ir(andrea, '/inicio');
+  await enviar(andrea, '#misReportes a[href*="/coincidencias"]');
+  const lista = await textos(andrea, '#coincidencias li a');
+  await captura(andrea, 'hu14-coincidencias.png');
+  const enLista = (d) => lista.some((t) => t.includes(d));
+  const metrosDe = (d) => Number((lista.find((t) => t.includes(d)) || '').match(/A (\d+) m/)?.[1]);
+  paso(1, 'La calculadora a unos 40 m y 2 días después aparece con su distancia',
+    enLista('Calculadora gris sin tapa') && Math.abs(metrosDe('Calculadora gris sin tapa') - 40) <= 8
+    && await existe(andrea, `#coincidencias a[href*="/reportes/detalle?id="]`));
+  paso(2, 'No aparecen las llaves (otra categoría), la de 350 m ni la encontrada 35 días después',
+    lista.length === 2 && !enLista('Llaves de casillero') && !enLista('Calculadora del laboratorio')
+    && !enLista('Calculadora olvidada en el aula'));
+  paso(3, 'La de unos 40 m aparece antes que la de unos 150 m',
+    lista[0].includes('Calculadora gris sin tapa') && lista[1].includes('Calculadora con estuche azul'));
+  return idPerdido;
+});
+
+(async () => {
+  fs.mkdirSync(SALIDA, { recursive: true });
+  const navegador = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--lang=es-EC'] });
+  // Cada persona tiene su propia sesión, como si usara su propio navegador
+  const sesion = async (usuario) => {
+    const contexto = await navegador.createBrowserContext();
+    const page = await contexto.newPage();
+    await page.setViewport({ width: 1200, height: 760, deviceScaleFactor: 1.5 });
+    page.on('dialog', (dialogo) => dialogo.accept());
+    await identificar(page, usuario);
+    return page;
+  };
+  for (const seccion of SECCIONES) {
+    await seccion({ sesion });
+  }
+  await navegador.close();
+
+  const fallos = resultados.flatMap((c) => c.pasos.filter((p) => !p.cumple).map((p) => `${c.id} escenario ${p.numero}`));
+  fs.writeFileSync(path.join(SALIDA, 'resultados.json'), JSON.stringify({
+    fecha: new Date().toISOString().slice(0, 10), casos: resultados }, null, 1));
+  console.log(fallos.length ? `\nFALLOS: ${fallos.join(', ')}` : '\nTODOS LOS ESCENARIOS SE CUMPLEN');
+  process.exit(fallos.length ? 1 : 0);
+})().catch((e) => { console.error(e); process.exit(1); });
