@@ -61,6 +61,34 @@ public class Aviso {
                 "/reportes/detalle?id=" + encontrado.getId());
     }
 
+    /** HU-18: avisa al reclamante que su reclamación fue aceptada. */
+    public static Aviso reclamacionAceptada(Reclamacion reclamacion) {
+        return paraReclamante(reclamacion, "Su reclamación de «" + objetoDe(reclamacion)
+                + "» fue aceptada. Pronto recibirá la propuesta de entrega.");
+    }
+
+    /** HU-18: avisa al reclamante que su reclamación fue rechazada, con el motivo. */
+    public static Aviso reclamacionRechazada(Reclamacion reclamacion) {
+        return paraReclamante(reclamacion, "Su reclamación de «" + objetoDe(reclamacion)
+                + "» fue rechazada. Motivo: " + reclamacion.getMotivoRechazo());
+    }
+
+    /** HU-18: avisa al reclamante el lugar y la fecha propuestos para la entrega, para que confirme el acuerdo. */
+    public static Aviso entregaPropuesta(AcuerdoEntrega acuerdo) {
+        Reclamacion reclamacion = acuerdo.getReclamacion();
+        return paraReclamante(reclamacion, "Le propusieron entregarle «" + objetoDe(reclamacion) + "» en "
+                + acuerdo.getLugar() + " el " + acuerdo.getFechaPropuesta().toString().replace('T', ' ')
+                + ". Confirme el acuerdo de entrega.");
+    }
+
+    private static Aviso paraReclamante(Reclamacion reclamacion, String texto) {
+        return new Aviso(reclamacion.getReclamante(), texto, "/inicio");
+    }
+
+    private static String objetoDe(Reclamacion reclamacion) {
+        return reclamacion.getObjeto().getDescripcionPublica();
+    }
+
     /** HU-17: el usuario ya vio el aviso en su bandeja. */
     public void marcarLeido() {
         leido = true;
