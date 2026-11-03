@@ -100,8 +100,16 @@
             <form method="post" action="${ctx}/devoluciones" class="formulario">
                 <input type="hidden" name="accion" value="proponer">
                 <input type="hidden" name="id" value="${reclamacion.id}">
-                <label for="lugar">Lugar de entrega</label>
-                <input type="text" id="lugar" name="lugar" maxlength="150" required>
+                <%-- HU-21: punto de entrega oficial con su horario, u otro lugar escrito --%>
+                <label for="punto">Punto de entrega oficial</label>
+                <select id="punto" name="punto">
+                    <option value="">Otro lugar (escríbalo abajo)</option>
+                    <c:forEach var="punto" items="${puntos}">
+                        <option value="${punto.id}"><c:out value="${punto.nombre}"/> · atiende ${punto.horario}</option>
+                    </c:forEach>
+                </select>
+                <label for="lugar">Otro lugar de entrega</label>
+                <input type="text" id="lugar" name="lugar" maxlength="150">
                 <label for="fecha">Fecha y hora</label>
                 <input type="datetime-local" id="fecha" name="fecha" required>
                 <div class="acciones">
@@ -114,6 +122,10 @@
             <h2>Acuerdo de entrega</h2>
             <dl class="datos" id="acuerdo">
                 <dt>Lugar</dt><dd><c:out value="${acuerdo.lugar}"/></dd>
+                <c:if test="${not empty acuerdo.punto}">
+                    <dt>Punto oficial</dt>
+                    <dd id="punto"><c:out value="${acuerdo.punto.referencia}"/> · atiende ${acuerdo.punto.horario}</dd>
+                </c:if>
                 <dt>Fecha propuesta</dt><dd>${fn:replace(acuerdo.fechaPropuesta, 'T', ' ')}</dd>
                 <dt>Confirmación del reclamante</dt>
                 <dd id="confirmacionAcuerdo">

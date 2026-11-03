@@ -332,6 +332,8 @@ public class ControlDevoluciones extends ControlBase {
         request.setAttribute("reporte", reporte);
         request.setAttribute("pendientes", pendientes);
         request.setAttribute("enCurso", reclamacionDAO.buscarEnCurso(reporte));
+        // HU-21: puntos de entrega oficiales para proponer la entrega
+        request.setAttribute("puntos", puntoEntregaDAO.listarTodos());
         mostrar("panelDevolucion.jsp", request, response);
     }
 

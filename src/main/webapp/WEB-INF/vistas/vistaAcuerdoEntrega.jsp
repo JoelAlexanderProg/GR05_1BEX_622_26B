@@ -10,6 +10,12 @@
 <dl class="datos" id="propuesta">
     <dt>Objeto</dt><dd><c:out value="${acuerdo.reclamacion.objeto.descripcionPublica}"/></dd>
     <dt>Lugar</dt><dd><c:out value="${acuerdo.lugar}"/></dd>
+    <%-- HU-21: el reclamante ve dónde queda el punto oficial y cuándo atiende --%>
+    <c:if test="${not empty acuerdo.punto}">
+        <dt>Punto oficial</dt>
+        <dd id="punto"><c:out value="${acuerdo.punto.nombre}"/> · <c:out value="${acuerdo.punto.referencia}"/>
+            · atiende ${acuerdo.punto.horario}</dd>
+    </c:if>
     <dt>Fecha propuesta</dt><dd>${fn:replace(acuerdo.fechaPropuesta, 'T', ' ')}</dd>
     <dt>Estado de la reclamación</dt><dd id="estadoReclamacion">${acuerdo.reclamacion.estado.etiqueta}</dd>
     <dt>Confirmación</dt>
