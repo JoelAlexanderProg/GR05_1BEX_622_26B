@@ -34,11 +34,11 @@ public class ControlRegistroReporte extends ControlBase {
     public static final String MOTIVO_RETIRO = "El reporte fue retirado por su autor.";
 
     private final ReporteDAO reporteDAO;
-    private final CategoriaDAO categoriaDAO = new CategoriaDAO();
+    private final CategoriaDAO categoriaDAO;
     private final ReclamacionDAO reclamacionDAO;
 
     public ControlRegistroReporte() {
-        this(new ReporteDAO(), new ReclamacionDAO());
+        this(new ReporteDAO(), new ReclamacionDAO(), new CategoriaDAO());
     }
 
     /**
@@ -46,8 +46,16 @@ public class ControlRegistroReporte extends ControlBase {
      * reemplazarlos por objetos simulados.
      */
     ControlRegistroReporte(ReporteDAO reporteDAO, ReclamacionDAO reclamacionDAO) {
+        this(reporteDAO, reclamacionDAO, new CategoriaDAO());
+    }
+
+    /**
+     * HU-15: también recibe el acceso a datos de las categorías, para probar el registro sin base de datos.
+     */
+    ControlRegistroReporte(ReporteDAO reporteDAO, ReclamacionDAO reclamacionDAO, CategoriaDAO categoriaDAO) {
         this.reporteDAO = reporteDAO;
         this.reclamacionDAO = reclamacionDAO;
+        this.categoriaDAO = categoriaDAO;
     }
 
     @Override
@@ -88,6 +96,14 @@ public class ControlRegistroReporte extends ControlBase {
     }
 
     public Reporte registrarReporte(Usuario usuario, DatosReporte datos) {
+        return registrarReporte(usuario, datos, null);
+    }
+
+    /**
+     * HU-15: si se indica un reporte de pérdida, el objeto encontrado queda vinculado con él
+     * y su dueño lo ve en «Mis reportes».
+     */
+    public Reporte registrarReporte(Usuario usuario, DatosReporte datos, UUID perdidoId) {
         // Nota de SEC-01: el control valida campos y categoría
         validarCampos(datos);
         Categoria categoria = categoriaDAO.buscarPorId(datos.categoriaId());
@@ -113,6 +129,11 @@ public class ControlRegistroReporte extends ControlBase {
             }
         }
 
+        // HU-15: el objeto encontrado queda vinculado con el reporte de pérdida de su dueño
+        if (perdidoId != null) {
+            vincular(reporte, buscarPerdido(perdidoId));
+        }
+
         // SEC-01 · 10-11: publicar() → reporte ACTIVO
         reporte.publicar();
 
@@ -134,6 +155,38 @@ public class ControlRegistroReporte extends ControlBase {
         }
         // El retiro y los rechazos se guardan en una sola transacción
         reporteDAO.actualizar(reporte);
+    }
+
+    /**
+     * HU-15: reporte de pérdida sobre el que el actor quiere avisar que encontró el objeto.
+     * Comprueba que siga activo y que no sea del propio actor.
+     */
+    public Reporte buscarPerdidoParaAvisar(Usuario actor, UUID perdidoId) {
+        Reporte perdido = buscarPerdido(perdidoId);
+        if (!perdido.estaActivo()) {
+            throw new OperacionInvalidaException("Este reporte de pérdida ya no está activo.");
+        }
+        if (perdido.esAutor(actor)) {
+            throw new OperacionInvalidaException("No puede avisar que encontró un objeto que usted mismo reportó.");
+        }
+        return perdido;
+    }
+
+    private Reporte buscarPerdido(UUID perdidoId) {
+        Reporte perdido = reporteDAO.buscarPorId(perdidoId);
+        if (perdido == null) {
+            throw new OperacionInvalidaException("El reporte indicado no existe.");
+        }
+        return perdido;
+    }
+
+    /** Las reglas del vínculo están en la entidad; aquí se muestran como error del formulario. */
+    private void vincular(Reporte encontrado, Reporte perdido) {
+        try {
+            encontrado.vincularConPerdido(perdido);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw new OperacionInvalidaException(e.getMessage());
+        }
     }
 
     private void validarCampos(DatosReporte datos) {
