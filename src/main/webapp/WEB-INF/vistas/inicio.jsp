@@ -57,6 +57,27 @@
         </c:otherwise>
     </c:choose>
 
+    <%-- HU-15: objetos encontrados que otras personas vincularon con mis reportes de pérdida --%>
+    <c:if test="${not empty hallazgos}">
+        <h2>Alguien encontró mis objetos</h2>
+        <table id="hallazgos">
+            <thead>
+            <tr><th>Mi objeto perdido</th><th>Objeto encontrado</th><th>Encontrado por</th><th>Fecha</th><th></th></tr>
+            </thead>
+            <tbody>
+            <c:forEach var="hallazgo" items="${hallazgos}">
+                <tr>
+                    <td><c:out value="${hallazgo.reportePerdido.descripcionPublica}"/></td>
+                    <td><c:out value="${hallazgo.descripcionPublica}"/></td>
+                    <td><c:out value="${hallazgo.autor.nombre}"/></td>
+                    <td>${hallazgo.fechaSuceso}</td>
+                    <td class="enlaces"><a href="${ctx}/reportes/detalle?id=${hallazgo.id}">Ver y reclamar</a></td>
+                </tr>
+            </c:forEach>
+            </tbody>
+        </table>
+    </c:if>
+
     <h2>Mis reclamaciones</h2>
     <c:choose>
         <c:when test="${empty misReclamaciones}">

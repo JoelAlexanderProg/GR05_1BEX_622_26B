@@ -26,6 +26,8 @@ public class ControlInicio extends ControlBase {
         Usuario actor = actor(request);
         if (actor != null) {
             request.setAttribute("misReportes", reporteDAO.listarPorAutor(actor));
+            // HU-15: objetos que otras personas avisaron haber encontrado
+            request.setAttribute("hallazgos", reporteDAO.listarHallazgosPara(actor));
             request.setAttribute("misReclamaciones", reclamacionDAO.listarPorReclamante(actor));
         }
         mostrar("inicio.jsp", request, response);

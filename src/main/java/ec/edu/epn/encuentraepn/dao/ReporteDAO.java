@@ -62,6 +62,18 @@ public class ReporteDAO extends GenericDAO<Reporte> {
                 .getResultList();
     }
 
+    /**
+     * HU-15: objetos encontrados, todavía activos, que otras personas vincularon con los reportes de pérdida del autor.
+     */
+    public List<Reporte> listarHallazgosPara(Usuario autor) {
+        return em()
+                .createQuery("SELECT r FROM Reporte r WHERE r.reportePerdido.autor = :autor AND r.estado = :estado "
+                        + "ORDER BY r.fechaSuceso DESC", Reporte.class)
+                .setParameter("autor", autor)
+                .setParameter("estado", EstadoReporte.ACTIVO)
+                .getResultList();
+    }
+
     public List<Reporte> listarPorAutor(Usuario autor) {
         return em()
                 .createQuery("SELECT r FROM Reporte r WHERE r.autor = :autor ORDER BY r.fechaSuceso DESC", Reporte.class)
