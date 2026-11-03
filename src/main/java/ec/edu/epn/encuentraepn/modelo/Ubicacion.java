@@ -10,6 +10,9 @@ import jakarta.persistence.Embeddable;
 @Embeddable
 public class Ubicacion {
 
+    /** Radio medio de la Tierra, en metros, para la fórmula de Haversine. */
+    private static final double RADIO_TIERRA_METROS = 6_371_000;
+
     @Column(nullable = false)
     private double latitud;
 
@@ -31,6 +34,19 @@ public class Ubicacion {
 
     public boolean estaDentroDelCampus() {
         return Campus.contiene(latitud, longitud);
+    }
+
+    /**
+     * HU-14: distancia en metros hasta otra ubicación, con la fórmula de Haversine
+     * (distancia sobre la superficie de una esfera).
+     */
+    public double distanciaA(Ubicacion otra) {
+        double diferenciaLatitud = Math.toRadians(otra.latitud - latitud);
+        double diferenciaLongitud = Math.toRadians(otra.longitud - longitud);
+        double a = Math.pow(Math.sin(diferenciaLatitud / 2), 2)
+                + Math.cos(Math.toRadians(latitud)) * Math.cos(Math.toRadians(otra.latitud))
+                * Math.pow(Math.sin(diferenciaLongitud / 2), 2);
+        return 2 * RADIO_TIERRA_METROS * Math.asin(Math.sqrt(a));
     }
 
     public double getLatitud() {
