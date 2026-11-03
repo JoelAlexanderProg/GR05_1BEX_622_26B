@@ -37,6 +37,10 @@
                             <c:if test="${reporte.esEncontrado()}">
                                 <a href="${ctx}/devoluciones?reporte=${reporte.id}">Reclamaciones</a>
                             </c:if>
+                            <%-- HU-14: un objeto perdido activo puede tener objetos encontrados que coinciden --%>
+                            <c:if test="${not reporte.esEncontrado() and reporte.estaActivo()}">
+                                <a href="${ctx}/coincidencias?reporte=${reporte.id}">Coincidencias</a>
+                            </c:if>
                             <%-- HU-11: solo los reportes activos se pueden retirar --%>
                             <c:if test="${reporte.estaActivo()}">
                                 <form method="post" action="${ctx}/reportes/retirar"

@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
  * un objeto o gestionar una devolución. Si no lo está, lo envía a identificarse
  * y después lo devuelve a la página que pidió.
  */
-@WebFilter({"/reportes/nuevo", "/reportes/retirar", "/reclamaciones/*", "/devoluciones"})
+@WebFilter({"/reportes/nuevo", "/reportes/retirar", "/reclamaciones/*", "/devoluciones", "/coincidencias"})
 public class FiltroIdentificacion extends HttpFilter {
 
     private final SesionUsuario sesion = new SesionUsuario();

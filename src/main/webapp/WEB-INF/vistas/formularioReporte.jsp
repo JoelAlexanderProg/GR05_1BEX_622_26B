@@ -31,6 +31,9 @@
         </dl>
         <div class="acciones">
             <a class="boton" href="${ctx}/reportes/detalle?id=${reporte.id}">Ver el reporte</a>
+            <c:if test="${not reporte.esEncontrado()}">
+                <a class="boton secundario" id="verCoincidencias" href="${ctx}/coincidencias?reporte=${reporte.id}">Ver coincidencias</a>
+            </c:if>
             <a href="${ctx}/reportes/nuevo">Registrar otro reporte</a>
         </div>
     </c:when>
