@@ -1,8 +1,10 @@
 package ec.edu.epn.encuentraepn.dao;
 
+import ec.edu.epn.encuentraepn.modelo.Categoria;
 import ec.edu.epn.encuentraepn.modelo.FiltrosReporte;
 import ec.edu.epn.encuentraepn.modelo.EstadoReporte;
 import ec.edu.epn.encuentraepn.modelo.Reporte;
+import ec.edu.epn.encuentraepn.modelo.TipoReporte;
 import ec.edu.epn.encuentraepn.modelo.Usuario;
 
 import java.util.List;
@@ -41,6 +43,23 @@ public class ReporteDAO extends GenericDAO<Reporte> {
      */
     public List<Reporte> listarTodos() {
         return em().createQuery("SELECT r FROM Reporte r", Reporte.class).getResultList();
+    }
+
+    /**
+     * HU-14: objetos encontrados que siguen activos en la categoría indicada.
+     */
+    public List<Reporte> listarEncontradosActivos(Categoria categoria) {
+        return listarActivos(TipoReporte.ENCONTRADO, categoria);
+    }
+
+    private List<Reporte> listarActivos(TipoReporte tipo, Categoria categoria) {
+        return em()
+                .createQuery("SELECT r FROM Reporte r WHERE r.estado = :estado AND r.tipo = :tipo "
+                        + "AND r.categoria = :categoria", Reporte.class)
+                .setParameter("estado", EstadoReporte.ACTIVO)
+                .setParameter("tipo", tipo)
+                .setParameter("categoria", categoria)
+                .getResultList();
     }
 
     public List<Reporte> listarPorAutor(Usuario autor) {
