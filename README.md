@@ -16,6 +16,34 @@ Examen del primer bimestre de Metodologías Ágiles (ISWD622, EPN, 2026-B), Grup
 | 4 | HU-11 Retirar un reporte propio (Prueba 1) | `ControlRegistroReporte` | `inicio.jsp` |
 | 4 | HU-12 Buscar reportes por palabra clave (Prueba 1) | `ControlConsultaReportes` | `mapaReportes.jsp` |
 | 4 | HU-13 Ver estadísticas de los objetos reportados (Prueba 1) | `ControlEstadisticas` | `estadisticas.jsp` |
+| R2 · It. 1 | HU-14 Ver los objetos encontrados que coinciden con mi objeto perdido | `ControlCoincidencias` | `coincidencias.jsp` |
+| R2 · It. 1 | HU-15 Avisar al dueño de un objeto perdido que yo lo encontré | `ControlRegistroReporte` | `detalleReporte.jsp`, `formularioReporte.jsp`, `inicio.jsp` |
+| R2 · It. 1 | HU-16 Recibir un aviso cuando se reporta un objeto que coincide con mi pérdida | `ControlRegistroReporte`, `ControlAvisos` | `avisos.jsp` |
+| R2 · It. 1 | HU-17 Ver cuántos avisos tengo sin leer | `ControlAvisos`, `ControlBase` | `comun/cabecera.jspf`, `avisos.jsp` |
+| R2 · It. 2 | HU-18 Recibir avisos cuando cambia el estado de mi reclamación | `ControlDevoluciones` | `avisos.jsp`, `inicio.jsp` |
+| R2 · It. 2 | HU-19 Cancelar una entrega que no se realizó | `ControlDevoluciones` | `panelDevolucion.jsp`, `inicio.jsp` |
+| R2 · It. 2 | HU-20 Pedir otra fecha para la entrega | `ControlDevoluciones` | `vistaAcuerdoEntrega.jsp`, `panelDevolucion.jsp` |
+| R2 · It. 2 | HU-21 Elegir un punto de entrega oficial del campus | `ControlDevoluciones` | `panelDevolucion.jsp`, `vistaAcuerdoEntrega.jsp` |
+
+## Release 2 (Examen 1B)
+
+**Objetivo:** que más objetos vuelvan a su dueño y en menos tiempo: el sistema une a quien perdió con quien encontró, avisa a cada uno lo que pasa y evita que una entrega quede trabada.
+
+El plan completo está en [`docs/release-2.md`](docs/release-2.md): capacidad y velocidad del equipo, épicas y features, las dos iteraciones con sus historias, criterios de aceptación y tareas, y el commit de cada tarea. Cada commit se llama `HU-nn · Tn: …`, de modo que se puede seguir épica → feature → historia → tarea → commit.
+
+| Iteración | Objetivo | Historias | Horas ideales | Horas reales |
+|---|---|---|---|---|
+| 1 | Que quien perdió un objeto se entere de que alguien lo encontró, sin revisar el mapa a mano | HU-14, HU-15, HU-16, HU-17 | 30 | 40 |
+| 2 | Que toda entrega acordada termine: o el objeto llega a su dueño, o vuelve a estar disponible | HU-18, HU-19, HU-20, HU-21 | 30 | 40 |
+
+Qué agrega:
+
+- **Coincidencias (HU-14):** un objeto encontrado coincide con uno perdido si es de la misma categoría, está a 200 m o menos (fórmula de Haversine) y se encontró entre la fecha de la pérdida y 30 días después. Se ven en «Mis reportes» → «Coincidencias».
+- **«Yo lo encontré» (HU-15):** en el detalle de un objeto perdido de otra persona; el dueño ve el hallazgo en «Mis reportes» y lo reclama con las preguntas de siempre.
+- **Avisos (HU-16 a HU-18):** entidad `Aviso` y bandeja «Mis avisos», con el contador de avisos sin leer en la barra. Avisan las coincidencias y los cambios de la reclamación (aceptada, rechazada, entrega propuesta).
+- **Entregas (HU-19 a HU-21):** cancelar una entrega que no ocurrió (la reclamación queda CANCELADA y el objeto vuelve a ACTIVO), pedir y aceptar otra fecha, y elegir un punto de entrega oficial con su horario. Los cuatro puntos son datos de ejemplo que carga `InicializadorDatos`.
+
+Pruebas: 69 pruebas unitarias (`./mvnw test`) y 24 escenarios en el navegador, tres por historia (`pruebas/casos-release-2.js`).
 
 ## Trazabilidad de los modelos al código
 
@@ -48,18 +76,19 @@ No se usan frameworks de aplicación.
 
 ```
 src/main/java/ec/edu/epn/encuentraepn/
-├── modelo/        entidades JPA, enumeraciones y datos de apoyo (Campus, DatosReporte, FiltrosReporte, DatosPublicos)
+├── modelo/        entidades JPA (también Aviso y PuntoEntrega), enumeraciones y datos de apoyo (Campus, Coincidencia…)
 ├── dao/           JPAUtil, GenericDAO<T> y un DAO por entidad raíz
 ├── controlador/   un Servlet por clase de control, más la identificación y la página de inicio
-└── web/           filtros, sesión del usuario y carga inicial de categorías
+└── web/           filtros, sesión del usuario y carga inicial de categorías y puntos de entrega
 src/main/webapp/
 ├── WEB-INF/vistas/   una JSP por clase de interfaz
 ├── css/, js/         estilos y mapa
 └── lib/leaflet/      librería del mapa
 src/test/java/        pruebas unitarias (JUnit 5 y Mockito)
 docs/modelos/         diagramas de clases y de secuencia del diseño
+docs/release-2.md     plan del Release 2 con la trazabilidad de cada tarea a su commit
 docs/historias/       historias de usuario del Incremento 4: tarjeta, criterios, tareas y pruebas de aceptación
-pruebas/              casos de prueba automatizados en el navegador (CP-01A a CP-08)
+pruebas/              casos de prueba automatizados en el navegador (CP-01A a CP-08 y Release 2)
 jenkins/              imagen de Jenkins del grupo: plugins y configuración como código
 Dockerfile            imagen de la aplicación (Tomcat 10.1 con el WAR)
 Jenkinsfile           pipeline de integración continua
@@ -67,22 +96,22 @@ Jenkinsfile           pipeline de integración continua
 
 ## Despliegue con Docker
 
-Solo se necesita Docker. La imagen publicada en Docker Hub es [joelalexanderp/encuentraepn](https://hub.docker.com/r/joelalexanderp/encuentraepn):
+Solo se necesita Docker. La imagen publicada en Docker Hub, [joelalexanderp/encuentraepn:1.0](https://hub.docker.com/r/joelalexanderp/encuentraepn), es la de la Prueba 1 (sin el Release 2). Para ejecutar esta versión, se construye la imagen desde el código:
 
 ```bash
-docker run -d --name encuentraepn -p 8080:8080 joelalexanderp/encuentraepn:1.0
+docker build -t encuentraepn-release2 .
+docker run -d --name encuentraepn -p 8080:8080 encuentraepn-release2
 ```
 
-Luego abrir <http://localhost:8080/>. La aplicación arranca con la base de datos vacía (solo con las categorías). Para conservar los datos aunque se borre el contenedor, agregar un volumen: `-v encuentraepn-datos:/root/gr05_1bex`.
-
-Para construir la imagen desde el código: `docker build -t encuentraepn .` y luego `docker run -d -p 8080:8080 encuentraepn`. Para detener y borrar el contenedor: `docker rm -f encuentraepn`.
+Luego abrir <http://localhost:8080/>. La aplicación arranca con la base de datos vacía (solo con las categorías y los puntos de entrega). Para conservar los datos aunque se borre el contenedor, agregar un volumen: `-v encuentraepn-datos:/root/gr05_1bex`. Para detener y borrar el contenedor: `docker rm -f encuentraepn`.
 
 ## Integración continua con Jenkins en Docker
 
-La imagen [joelalexanderp/gr05-jenkins](https://hub.docker.com/r/joelalexanderp/gr05-jenkins) es la oficial `jenkins/jenkins:lts-jdk21` con los plugins (`jenkins/plugins.txt`) y la configuración como código (`jenkins/casc.yaml`): el usuario `admin` y la tarea Pipeline `GR05_1BPR1_622_26B`, que toma el `Jenkinsfile` de la rama `main` de este repositorio. No necesita credenciales porque el repositorio es público.
+La carpeta `jenkins` construye la imagen de Jenkins del grupo: la oficial `jenkins/jenkins:lts-jdk21` con los plugins (`jenkins/plugins.txt`) y la configuración como código (`jenkins/casc.yaml`): el usuario `admin` y la tarea Pipeline `GR05_1BEX_622_26B`, que toma el `Jenkinsfile` de la rama `main` de este repositorio. No necesita credenciales porque el repositorio es público. La imagen publicada [joelalexanderp/gr05-jenkins:1.0](https://hub.docker.com/r/joelalexanderp/gr05-jenkins) apunta al repositorio de la Prueba 1; para este repositorio se construye así:
 
 ```bash
-docker run -d --name jenkins-gr05 -p 8090:8080 -v jenkins-gr05-home:/var/jenkins_home -e JENKINS_ADMIN_PASSWORD=<clave> joelalexanderp/gr05-jenkins:1.0
+docker build -t gr05-jenkins-release2 jenkins
+docker run -d --name jenkins-gr05 -p 8090:8080 -v jenkins-gr05-release2:/var/jenkins_home -e JENKINS_ADMIN_PASSWORD=<clave> gr05-jenkins-release2
 ```
 
 Luego abrir <http://localhost:8090/>. El pipeline revisa el repositorio cada 2 minutos y, si hay commits nuevos, ejecuta las etapas **Compilación**, **Pruebas unitarias** (con el reporte de JUnit) y **Empaquetado** (el WAR queda como artefacto).
@@ -169,4 +198,5 @@ Maven ejecuta todas las pruebas de `src/test/java` y al final muestra cuántas p
 - Lenin Alejandro Jerez Chimbo
 - Dylan Isaí Maldonado Morales
 - Joel Alexander Places Lucero
+- Jeimy Jhair Sánchez Tixe
 - Francisco Gabriel Villalba Portilla
