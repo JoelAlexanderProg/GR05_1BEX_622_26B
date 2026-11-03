@@ -30,4 +30,14 @@ class AvisoTest {
         assertTrue(aviso.getEnlace().startsWith("/reportes/detalle?id="));
         assertFalse(aviso.isLeido());
     }
+
+    @Test
+    @DisplayName("Un aviso nuevo queda leído cuando el usuario lo ve")
+    void marcarUnAvisoComoLeido() {
+        Aviso aviso = Aviso.coincidencia(reportePerdido(calculadoras), encontradoA(calculadoras, 50, 2));
+
+        aviso.marcarLeido();
+
+        assertTrue(aviso.isLeido());
+    }
 }

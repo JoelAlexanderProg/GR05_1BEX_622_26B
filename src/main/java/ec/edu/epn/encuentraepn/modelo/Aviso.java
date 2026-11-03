@@ -61,6 +61,11 @@ public class Aviso {
                 "/reportes/detalle?id=" + encontrado.getId());
     }
 
+    /** HU-17: el usuario ya vio el aviso en su bandeja. */
+    public void marcarLeido() {
+        leido = true;
+    }
+
     public UUID getId() {
         return id;
     }

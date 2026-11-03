@@ -22,4 +22,13 @@ public class AvisoDAO extends GenericDAO<Aviso> {
                 .setParameter("destinatario", destinatario)
                 .getResultList();
     }
+
+    /** HU-17: guarda en una sola transacción los avisos que se marcaron como leídos. */
+    public void marcarLeidos(List<Aviso> avisos) {
+        enTransaccion(em -> avisos.forEach(aviso -> {
+            if (!em.contains(aviso)) {
+                em.merge(aviso);
+            }
+        }));
+    }
 }
