@@ -1,7 +1,8 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<%-- «boundary» VistaAcuerdoEntrega (CU-04): mostrarPropuesta(acuerdo), confirmarAcuerdo(id) --%>
+<%-- «boundary» VistaAcuerdoEntrega (CU-04): mostrarPropuesta(acuerdo), confirmarAcuerdo(id);
+     HU-20: solicitarOtraFecha(id, fecha) --%>
 <c:set var="titulo" value="Acuerdo de entrega"/>
 <%@ include file="/WEB-INF/vistas/comun/cabecera.jspf" %>
 
@@ -15,6 +16,10 @@
     <dd id="confirmacionAcuerdo">
         ${acuerdo.estaConfirmado() ? fn:replace(acuerdo.fechaConfirmacion, 'T', ' ') : 'Pendiente'}
     </dd>
+    <c:if test="${acuerdo.hayFechaSolicitada()}">
+        <dt>Nueva fecha solicitada</dt>
+        <dd id="fechaSolicitada">${fn:replace(acuerdo.fechaSolicitada, 'T', ' ')} (esperando que la acepte quien encontró el objeto)</dd>
+    </c:if>
 </dl>
 
 <%-- confirmarAcuerdo(id) --%>
@@ -23,6 +28,20 @@
         <input type="hidden" name="accion" value="confirmarAcuerdo">
         <input type="hidden" name="id" value="${acuerdo.reclamacion.id}">
         <button type="submit" class="boton" id="confirmarAcuerdo">Confirmar acuerdo</button>
+    </form>
+</c:if>
+
+<%-- HU-20: si no puede asistir, el reclamante pide otra fecha antes de confirmar --%>
+<c:if test="${esReclamante and not acuerdo.estaConfirmado() and not acuerdo.hayFechaSolicitada()}">
+    <h2>¿No puede asistir?</h2>
+    <form method="post" action="${ctx}/devoluciones" class="formulario" id="formularioOtraFecha">
+        <input type="hidden" name="accion" value="solicitarFecha">
+        <input type="hidden" name="id" value="${acuerdo.reclamacion.id}">
+        <label for="nuevaFecha">Pida otra fecha y hora para la entrega</label>
+        <input type="datetime-local" id="nuevaFecha" name="nuevaFecha" required>
+        <div class="acciones">
+            <button type="submit" class="boton secundario" id="pedirFecha">Pedir otra fecha</button>
+        </div>
     </form>
 </c:if>
 
