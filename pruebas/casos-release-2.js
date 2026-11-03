@@ -396,6 +396,49 @@ SECCIONES.push(async ({ sesion }) => {
     sinFormulario && error.includes('Solo se puede cancelar una entrega que todavía no se realizó.') && idReporte);
 });
 
+// ---------------------------------------------------------------------------------------------- HU-20
+SECCIONES.push(async ({ sesion }) => {
+  caso('HU-20', 'Pedir otra fecha para la entrega');
+  const nora = await sesion({ nombre: 'Nora Vaca', correo: 'nora.vaca@epn.edu.ec' });
+  const oscar = await sesion({ nombre: 'Óscar Lima', correo: 'oscar.lima@epn.edu.ec' });
+  const { idReclamacion } = await reclamacionAceptada(nora, oscar, 'Óscar Lima',
+    { categoria: 'Documentos', descripcion: 'Cédula de identidad en funda transparente', punto: aMetros(-150) });
+  const propuesta = proximoDiaHabil('10:00');
+  const otra = proximoDiaHabil('15:00');
+  await proponerEntrega(nora, { lugar: 'Ventanilla de la Facultad de Sistemas', fecha: propuesta });
+
+  await ir(oscar, `/devoluciones?acuerdo=${idReclamacion}`);
+  await oscar.$eval('#nuevaFecha', (campo, f) => { campo.value = f; }, otra);
+  await captura(oscar, 'hu20-pedir-otra-fecha.png');
+  await enviar(oscar, '#pedirFecha');
+  const vistaOscar = await textoDe(oscar, '#fechaSolicitada');
+  await ir(nora, `/devoluciones?reclamacion=${idReclamacion}`);
+  const vistaNora = await textoDe(nora, '#fechaSolicitada');
+  await captura(nora, 'hu20-fecha-solicitada.png');
+  const otraTexto = otra.replace('T', ' ');
+  paso(1, 'El acuerdo muestra a los dos la nueva fecha solicitada',
+    vistaOscar.startsWith(otraTexto) && vistaNora.startsWith(otraTexto));
+
+  await enviar(nora, '#aceptarFecha');
+  const acuerdo = await textoDe(nora, '#acuerdo');
+  const puedeDevolver = await existe(nora, '#confirmarDevolucion');
+  await captura(nora, 'hu20-fecha-aceptada.png');
+  paso(2, 'Al aceptar, el acuerdo queda con la nueva fecha y confirmado, y Nora puede registrar la devolución',
+    acuerdo.includes(otraTexto) && !acuerdo.includes('Pendiente') && puedeDevolver);
+
+  // Otra entrega sin confirmar: el reclamante pide una fecha que ya pasó
+  const segunda = await reclamacionAceptada(nora, oscar, 'Óscar Lima',
+    { categoria: 'Documentos', descripcion: 'Carné del comedor universitario', punto: aMetros(-140) });
+  await proponerEntrega(nora, { lugar: 'Ventanilla de la Facultad de Sistemas', fecha: propuesta });
+  await ir(oscar, `/devoluciones?acuerdo=${segunda.idReclamacion}`);
+  await oscar.$eval('#nuevaFecha', (campo, f) => { campo.value = f; }, `${haceDias(1)}T10:00`);
+  await enviar(oscar, '#pedirFecha');
+  const error = await textoDe(oscar, 'main');
+  await captura(oscar, 'hu20-fecha-pasada.png');
+  paso(3, 'Una fecha que ya pasó se rechaza con «Indique una fecha futura para la entrega.»',
+    error.includes('Indique una fecha futura para la entrega.'));
+});
+
 /** Quien encontró el objeto abre la reclamación aceptada desde el panel del reporte. */
 async function revisarReclamacionDeAceptada(page, idReporte) {
   await ir(page, `/devoluciones?reporte=${idReporte}`);
