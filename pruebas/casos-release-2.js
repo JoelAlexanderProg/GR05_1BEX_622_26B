@@ -141,6 +141,50 @@ SECCIONES.push(async ({ sesion }) => {
   return idPerdido;
 });
 
+// ---------------------------------------------------------------------------------------------- HU-15
+SECCIONES.push(async ({ sesion }) => {
+  caso('HU-15', 'Avisar al dueño de un objeto perdido que yo lo encontré');
+  const carla = await sesion({ nombre: 'Carla Ruiz', correo: 'carla.ruiz@epn.edu.ec' });
+  const diego = await sesion({ nombre: 'Diego Mora', correo: 'diego.mora@epn.edu.ec' });
+  const idLlaves = await registrarReporte(carla, { tipo: 'PERDIDO', categoria: 'Llaves',
+    descripcion: 'Llaves con llavero rojo', fecha: haceDias(3), punto: aMetros(-250) });
+
+  await ir(diego, `/reportes/detalle?id=${idLlaves}`);
+  await captura(diego, 'hu15-detalle-yo-lo-encontre.png');
+  await enviar(diego, '#loEncontre');
+  const tipoMarcado = await diego.$eval('input[name="tipo"][value="ENCONTRADO"]', (r) => r.checked);
+  const categoria = await diego.$eval('#categoria', (s) => s.options[s.selectedIndex].text.trim());
+  await captura(diego, 'hu15-formulario-precargado.png');
+  await completarReporte(diego, { descripcion: 'Llavero rojo con tres llaves', fecha: haceDias(2),
+    punto: aMetros(-240), preguntas: ['¿Qué dice el llavero?'] });
+  await ir(carla, '/inicio');
+  const fila = await textoDe(carla, '#hallazgos tbody tr');
+  await captura(carla, 'hu15-mis-reportes-hallazgo.png');
+  paso(1, 'Carla ve en «Mis reportes» el hallazgo de Diego, con un enlace para reclamarlo',
+    tipoMarcado && categoria === 'Llaves' && fila.includes('Llaves con llavero rojo')
+    && fila.includes('Llavero rojo con tres llaves') && fila.includes('Diego Mora')
+    && await existe(carla, '#hallazgos a[href*="/reportes/detalle?id="]'));
+
+  await ir(carla, `/reportes/detalle?id=${idLlaves}`);
+  paso(2, 'En su propio reporte, Carla no ve el botón «Yo lo encontré»', !(await existe(carla, '#loEncontre')));
+
+  const idCarnet = await registrarReporte(carla, { tipo: 'PERDIDO', categoria: 'Documentos',
+    descripcion: 'Carnet estudiantil de Carla', fecha: haceDias(1), punto: aMetros(-200) });
+  await ir(diego, `/reportes/nuevo?perdido=${idCarnet}`);
+  await ir(carla, '/inicio');
+  await carla.$$eval('#misReportes tbody tr', (filas) => {
+    filas.find((f) => f.innerText.includes('Carnet estudiantil de Carla')).querySelector('button.boton-enlace').click();
+  });
+  await carla.waitForNavigation({ waitUntil: 'domcontentloaded' });
+  await ir(diego, `/reportes/nuevo?perdido=${idCarnet}`);
+  const error = await textoDe(diego, 'main');
+  await captura(diego, 'hu15-reporte-retirado.png');
+  await ir(diego, '/inicio');
+  const misReportes = await textoDe(diego, '#misReportes');
+  paso(3, 'Sobre el carnet ya retirado, el sistema responde «Este reporte de pérdida ya no está activo.» y no registra nada',
+    error.includes('Este reporte de pérdida ya no está activo.') && !misReportes.includes('Carnet'));
+});
+
 (async () => {
   fs.mkdirSync(SALIDA, { recursive: true });
   const navegador = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--lang=es-EC'] });
