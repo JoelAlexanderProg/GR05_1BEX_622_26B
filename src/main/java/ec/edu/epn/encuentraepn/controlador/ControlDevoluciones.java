@@ -92,6 +92,14 @@ public class ControlDevoluciones extends ControlBase {
             confirmarDevolucion(actor, id, ahora());
             // SEC-04 · 44-45: devolución registrada → confirmación de devolución
             redirigir(request, response, "/devoluciones?reclamacion=" + id);
+        } else if ("solicitarFecha".equals(accion)) {
+            // HU-20: el reclamante pide otra fecha para la entrega
+            solicitarOtraFecha(actor, id, leerFechaHora(request.getParameter("nuevaFecha")));
+            redirigir(request, response, "/devoluciones?acuerdo=" + id);
+        } else if ("aceptarFecha".equals(accion)) {
+            // HU-20: quien encontró el objeto acepta la fecha que pidió el reclamante
+            aceptarOtraFecha(actor, id);
+            redirigir(request, response, "/devoluciones?reclamacion=" + id);
         } else if ("cancelar".equals(accion)) {
             // HU-19: cancelarEntrega(actor, id, motivo); el objeto vuelve a estar disponible
             cancelarEntrega(actor, id, request.getParameter("motivoCancelacion"));
@@ -213,6 +221,37 @@ public class ControlDevoluciones extends ControlBase {
         }
         // SEC-04 · 34-35: confirmar(fecha) → fecha de confirmación registrada
         acuerdo.confirmar(ahora());
+        reclamacionDAO.actualizar(reclamacion);
+    }
+
+    /**
+     * HU-20: el reclamante pide otra fecha para una entrega propuesta que todavía no confirmó.
+     */
+    public void solicitarOtraFecha(Usuario actor, UUID id, LocalDateTime fecha) {
+        AcuerdoEntrega acuerdo = consultarAcuerdo(actor, id);
+        if (!acuerdo.getReclamacion().esReclamante(actor)) {
+            throw new OperacionInvalidaException("Solo el reclamante puede pedir otra fecha.");
+        }
+        try {
+            acuerdo.solicitarOtraFecha(fecha, ahora());
+        } catch (IllegalArgumentException e) {
+            throw new OperacionInvalidaException(e.getMessage());
+        } catch (IllegalStateException e) {
+            throw new OperacionInvalidaException("El acuerdo ya está confirmado: no se puede cambiar la fecha.");
+        }
+        reclamacionDAO.actualizar(acuerdo.getReclamacion());
+    }
+
+    /**
+     * HU-20: quien encontró el objeto acepta la fecha que pidió el reclamante; el acuerdo queda confirmado.
+     */
+    public void aceptarOtraFecha(Usuario actor, UUID id) {
+        Reclamacion reclamacion = buscarReclamacionRecibida(actor, id);
+        AcuerdoEntrega acuerdo = reclamacion.getAcuerdo();
+        if (acuerdo == null || !acuerdo.hayFechaSolicitada()) {
+            throw new OperacionInvalidaException("El reclamante no ha pedido otra fecha.");
+        }
+        acuerdo.aceptarOtraFecha(ahora());
         reclamacionDAO.actualizar(reclamacion);
     }
 
