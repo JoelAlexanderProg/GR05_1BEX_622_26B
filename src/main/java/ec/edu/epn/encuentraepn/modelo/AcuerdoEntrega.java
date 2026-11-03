@@ -32,6 +32,9 @@ public class AcuerdoEntrega {
 
     private LocalDateTime fechaConfirmacion;
 
+    /** HU-20: otra fecha que pidió el reclamante y que todavía no acepta quien encontró el objeto. */
+    private LocalDateTime fechaSolicitada;
+
     @OneToOne(optional = false)
     @JoinColumn(name = "reclamacion_id", nullable = false, unique = true)
     private Reclamacion reclamacion;
@@ -54,6 +57,40 @@ public class AcuerdoEntrega {
         fechaConfirmacion = fecha;
     }
 
+    /**
+     * HU-20: el reclamante no puede asistir y pide otra fecha, futura y distinta de la propuesta.
+     * Solo se puede pedir mientras el acuerdo no está confirmado.
+     */
+    public void solicitarOtraFecha(LocalDateTime fecha, LocalDateTime ahora) {
+        if (estaConfirmado()) {
+            throw new IllegalStateException("El acuerdo ya está confirmado");
+        }
+        if (fecha == null || !fecha.isAfter(ahora)) {
+            throw new IllegalArgumentException("Indique una fecha futura para la entrega.");
+        }
+        if (fecha.equals(fechaPropuesta)) {
+            throw new IllegalArgumentException("La nueva fecha debe ser distinta de la propuesta.");
+        }
+        fechaSolicitada = fecha;
+    }
+
+    /**
+     * HU-20: quien encontró el objeto acepta la fecha que pidió el reclamante. Como la pidió el propio
+     * reclamante, el acuerdo queda confirmado con esa fecha.
+     */
+    public void aceptarOtraFecha(LocalDateTime ahora) {
+        if (!hayFechaSolicitada()) {
+            throw new IllegalStateException("El reclamante no ha pedido otra fecha");
+        }
+        fechaPropuesta = fechaSolicitada;
+        fechaSolicitada = null;
+        confirmar(ahora);
+    }
+
+    public boolean hayFechaSolicitada() {
+        return fechaSolicitada != null;
+    }
+
     public boolean estaConfirmado() {
         return fechaConfirmacion != null;
     }
@@ -72,6 +109,10 @@ public class AcuerdoEntrega {
 
     public LocalDateTime getFechaConfirmacion() {
         return fechaConfirmacion;
+    }
+
+    public LocalDateTime getFechaSolicitada() {
+        return fechaSolicitada;
     }
 
     public Reclamacion getReclamacion() {
