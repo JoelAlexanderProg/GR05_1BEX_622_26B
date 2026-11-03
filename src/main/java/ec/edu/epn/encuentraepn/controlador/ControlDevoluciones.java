@@ -1,8 +1,10 @@
 package ec.edu.epn.encuentraepn.controlador;
 
+import ec.edu.epn.encuentraepn.dao.AvisoDAO;
 import ec.edu.epn.encuentraepn.dao.ReclamacionDAO;
 import ec.edu.epn.encuentraepn.dao.ReporteDAO;
 import ec.edu.epn.encuentraepn.modelo.AcuerdoEntrega;
+import ec.edu.epn.encuentraepn.modelo.Aviso;
 import ec.edu.epn.encuentraepn.modelo.Reclamacion;
 import ec.edu.epn.encuentraepn.modelo.Reporte;
 import ec.edu.epn.encuentraepn.modelo.RespuestaVerificacion;
@@ -29,16 +31,25 @@ public class ControlDevoluciones extends ControlBase {
 
     private final ReporteDAO reporteDAO = new ReporteDAO();
     private final ReclamacionDAO reclamacionDAO;
+    private final AvisoDAO avisoDAO;
 
     public ControlDevoluciones() {
-        this(new ReclamacionDAO());
+        this(new ReclamacionDAO(), new AvisoDAO());
     }
 
     /**
      * Recibe el acceso a datos de las reclamaciones, para que una prueba pueda reemplazarlo por un objeto simulado.
      */
     ControlDevoluciones(ReclamacionDAO reclamacionDAO) {
+        this(reclamacionDAO, new AvisoDAO());
+    }
+
+    /**
+     * HU-18: también recibe el acceso a datos de los avisos, para probar los avisos sin base de datos.
+     */
+    ControlDevoluciones(ReclamacionDAO reclamacionDAO, AvisoDAO avisoDAO) {
         this.reclamacionDAO = reclamacionDAO;
+        this.avisoDAO = avisoDAO;
     }
 
     @Override
@@ -124,6 +135,8 @@ public class ControlDevoluciones extends ControlBase {
         reporte.reservar();
         // SEC-04 · 19a: la aceptación y la reserva se guardan en una sola transacción
         reclamacionDAO.actualizar(reclamacion);
+        // HU-18: el reclamante recibe un aviso
+        avisoDAO.guardar(Aviso.reclamacionAceptada(reclamacion));
     }
 
     /**
@@ -133,6 +146,8 @@ public class ControlDevoluciones extends ControlBase {
         Reclamacion reclamacion = buscarReclamacionRecibida(actor, id);
         reclamacion.rechazar(motivo);
         reclamacionDAO.actualizar(reclamacion);
+        // HU-18: el reclamante recibe un aviso con el motivo
+        avisoDAO.guardar(Aviso.reclamacionRechazada(reclamacion));
     }
 
     public AcuerdoEntrega proponerEntrega(Usuario actor, UUID id, String lugar, LocalDateTime fecha) {
@@ -147,6 +162,8 @@ public class ControlDevoluciones extends ControlBase {
         AcuerdoEntrega acuerdo = new AcuerdoEntrega(reclamacion, lugar.trim(), fecha);
         reclamacion.registrarAcuerdo(acuerdo);
         reclamacionDAO.actualizar(reclamacion);
+        // HU-18: el reclamante recibe un aviso con el lugar y la fecha para confirmar el acuerdo
+        avisoDAO.guardar(Aviso.entregaPropuesta(acuerdo));
         return acuerdo;
     }
 

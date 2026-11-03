@@ -1,5 +1,6 @@
 package ec.edu.epn.encuentraepn.controlador;
 
+import ec.edu.epn.encuentraepn.dao.AvisoDAO;
 import ec.edu.epn.encuentraepn.dao.ReclamacionDAO;
 import ec.edu.epn.encuentraepn.modelo.EstadoReclamacion;
 import ec.edu.epn.encuentraepn.modelo.Reclamacion;
@@ -27,6 +28,10 @@ class ControlDevolucionesTest {
     @Mock
     private ReclamacionDAO reclamacionDAO;
 
+    /** Desde la HU-18 el rechazo también deja un aviso al reclamante: el DAO de avisos también se simula. */
+    @Mock
+    private AvisoDAO avisoDAO;
+
     @Test
     @DisplayName("Rechazar una reclamación la guarda con el DAO, sin usar la base de datos")
     void rechazarReclamacionLaGuardaConElDAO() {
@@ -34,7 +39,7 @@ class ControlDevolucionesTest {
         Reclamacion reclamacion = reclamacionPendiente(encontrante);
         UUID id = UUID.randomUUID();
         when(reclamacionDAO.buscarPorId(id)).thenReturn(reclamacion);
-        ControlDevoluciones control = new ControlDevoluciones(reclamacionDAO);
+        ControlDevoluciones control = new ControlDevoluciones(reclamacionDAO, avisoDAO);
 
         control.rechazarReclamacion(encontrante, id, MOTIVO);
 
