@@ -61,6 +61,40 @@ public final class DatosDePrueba {
                 categoria, zona);
     }
 
+    /** Lugar de la pérdida en los datos de las coincidencias (zona Centro). */
+    public static final double LATITUD = -0.2100;
+    public static final double LONGITUD = -78.4900;
+
+    /** Metros que hay en un grado de longitud junto a la línea ecuatorial. */
+    private static final double METROS_POR_GRADO = 111_195;
+
+    /**
+     * HU-14: reporte publicado de la calculadora que Andrea Paz perdió el 1 de octubre de 2026 en (LATITUD, LONGITUD).
+     */
+    public static Reporte reportePerdido(Categoria categoria) {
+        Usuario andrea = new Usuario("Andrea Paz", "andrea.paz@epn.edu.ec");
+        DatosReporte datos = new DatosReporte(TipoReporte.PERDIDO, null, "Calculadora Casio gris",
+                LocalDate.of(2026, 10, 1), LATITUD, LONGITUD, List.of());
+        Reporte reporte = new Reporte(datos, andrea, categoria, new Ubicacion(LATITUD, LONGITUD, Campus.ZONA_CENTRO));
+        reporte.publicar();
+        return reporte;
+    }
+
+    /**
+     * HU-14: reporte publicado de un objeto que Bruno Salas encontró los días indicados después del 1 de octubre
+     * y a los metros indicados al este del lugar de la pérdida.
+     */
+    public static Reporte encontradoA(Categoria categoria, double metros, int diasDespues) {
+        double longitud = LONGITUD + metros / METROS_POR_GRADO;
+        DatosReporte datos = new DatosReporte(TipoReporte.ENCONTRADO, null, "Calculadora encontrada",
+                LocalDate.of(2026, 10, 1).plusDays(diasDespues), LATITUD, longitud, List.of("¿De qué color es?"));
+        Reporte reporte = new Reporte(datos, new Usuario("Bruno Salas", "bruno.salas@epn.edu.ec"), categoria,
+                new Ubicacion(LATITUD, longitud, Campus.ZONA_CENTRO));
+        reporte.agregarPregunta("¿De qué color es?");
+        reporte.publicar();
+        return reporte;
+    }
+
     private static Reporte reporteEncontrado(Usuario encontrante) {
         return reporteEncontrado(encontrante, "Calculadora científica negra");
     }

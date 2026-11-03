@@ -30,6 +30,12 @@ import java.util.UUID;
 @Table(name = "reporte")
 public class Reporte {
 
+    /** HU-14: distancia máxima, en metros, entre el lugar de la pérdida y el del hallazgo. */
+    public static final int RADIO_COINCIDENCIA_METROS = 200;
+
+    /** HU-14: días después de la pérdida en los que un hallazgo todavía puede ser el mismo objeto. */
+    public static final int DIAS_COINCIDENCIA = 30;
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -109,6 +115,35 @@ public class Reporte {
      */
     public boolean contienePalabra(String palabra) {
         return normalizar(descripcionPublica).contains(normalizar(palabra));
+    }
+
+    /**
+     * HU-14: indica si un objeto encontrado puede ser este objeto perdido. Coincide si está activo,
+     * es de la misma categoría, se encontró a {@value #RADIO_COINCIDENCIA_METROS} m o menos y
+     * entre la fecha de la pérdida y {@value #DIAS_COINCIDENCIA} días después.
+     */
+    public boolean coincideCon(Reporte encontrado) {
+        LocalDate limite = fechaSuceso.plusDays(DIAS_COINCIDENCIA);
+        return tipo == TipoReporte.PERDIDO
+                && encontrado.esEncontrado()
+                && encontrado.estaActivo()
+                && esDeLaMismaCategoria(encontrado)
+                && !encontrado.fechaSuceso.isBefore(fechaSuceso)
+                && !encontrado.fechaSuceso.isAfter(limite)
+                && distanciaA(encontrado) <= RADIO_COINCIDENCIA_METROS;
+    }
+
+    /** HU-14: distancia en metros entre el lugar de este reporte y el de otro. */
+    public double distanciaA(Reporte otro) {
+        return ubicacion.distanciaA(otro.ubicacion);
+    }
+
+    /**
+     * Compara las categorías por su identificador; si todavía no se guardaron, por la misma instancia.
+     */
+    private boolean esDeLaMismaCategoria(Reporte otro) {
+        return categoria == otro.categoria
+                || categoria.getId() != null && categoria.getId().equals(otro.categoria.getId());
     }
 
     /**
