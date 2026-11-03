@@ -10,6 +10,7 @@
         <class>ec.edu.epn.encuentraepn.modelo.Reclamacion</class>
         <class>ec.edu.epn.encuentraepn.modelo.RespuestaVerificacion</class>
         <class>ec.edu.epn.encuentraepn.modelo.AcuerdoEntrega</class>
+        <class>ec.edu.epn.encuentraepn.modelo.Aviso</class>
         <properties>
             <!-- Base de datos H2 guardada en un archivo dentro de la carpeta del usuario -->
             <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
