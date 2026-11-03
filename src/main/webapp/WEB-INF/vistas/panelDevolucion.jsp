@@ -119,7 +119,19 @@
                 <dd id="confirmacionAcuerdo">
                     ${acuerdo.estaConfirmado() ? fn:replace(acuerdo.fechaConfirmacion, 'T', ' ') : 'Pendiente'}
                 </dd>
+                <c:if test="${acuerdo.hayFechaSolicitada()}">
+                    <dt>Nueva fecha solicitada</dt>
+                    <dd id="fechaSolicitada">${fn:replace(acuerdo.fechaSolicitada, 'T', ' ')}</dd>
+                </c:if>
             </dl>
+            <%-- HU-20: el reclamante pidió otra fecha; al aceptarla, el acuerdo queda confirmado --%>
+            <c:if test="${acuerdo.hayFechaSolicitada()}">
+                <form method="post" action="${ctx}/devoluciones" class="acciones">
+                    <input type="hidden" name="accion" value="aceptarFecha">
+                    <input type="hidden" name="id" value="${reclamacion.id}">
+                    <button type="submit" class="boton" id="aceptarFecha">Aceptar la nueva fecha</button>
+                </form>
+            </c:if>
             <%-- confirmarDevolucion(id) --%>
             <c:if test="${reclamacion.estaAceptada() and acuerdo.estaConfirmado()}">
                 <p>Cuando haya entregado el objeto al reclamante, confirme la devolución.</p>
