@@ -219,6 +219,38 @@ SECCIONES.push(async ({ sesion }) => {
     && conFecha && (await elena.$$('#avisos li a')).length === 2);
 });
 
+// ---------------------------------------------------------------------------------------------- HU-17
+SECCIONES.push(async ({ sesion }) => {
+  caso('HU-17', 'Ver cuántos avisos tengo sin leer');
+  const gabriela = await sesion({ nombre: 'Gabriela León', correo: 'gabriela.leon@epn.edu.ec' });
+  const hugo = await sesion({ nombre: 'Hugo Ríos', correo: 'hugo.rios@epn.edu.ec' });
+  // Gabriela pierde unos audífonos y Hugo reporta dos parecidos cerca: ella recibe 2 avisos
+  await registrarReporte(gabriela, { tipo: 'PERDIDO', categoria: 'Electrónicos',
+    descripcion: 'Audífonos blancos con estuche', fecha: haceDias(3), punto: aMetros(-100) });
+  for (const [descripcion, metros] of [['Audífonos en la cafetería', -90], ['Audífonos blancos sin estuche', -120]]) {
+    await registrarReporte(hugo, { tipo: 'ENCONTRADO', categoria: 'Electrónicos', descripcion,
+      fecha: haceDias(1), punto: aMetros(metros), preguntas: ['¿De qué marca son?'] });
+  }
+
+  await ir(gabriela, '/reportes');
+  const barra = await textoDe(gabriela, '#enlaceAvisos');
+  await captura(gabriela, 'hu17-contador.png');
+  paso(1, 'Con 2 avisos sin leer, la barra muestra «Avisos (2)»', barra === 'Avisos (2)');
+
+  await ir(gabriela, '/avisos');
+  const resaltados = (await gabriela.$$('#avisos li.nuevo')).length;
+  await captura(gabriela, 'hu17-avisos-nuevos.png');
+  await ir(gabriela, '/inicio');
+  const despues = await textoDe(gabriela, '#enlaceAvisos');
+  paso(2, 'Al abrir «Mis avisos» los 2 aparecen como nuevos y después la barra muestra «Avisos» sin número',
+    resaltados === 2 && despues === 'Avisos');
+
+  await ir(hugo, '/inicio');
+  const barraHugo = await textoDe(hugo, '#enlaceAvisos');
+  await captura(hugo, 'hu17-sin-avisos.png');
+  paso(3, 'Hugo, sin avisos sin leer, ve «Avisos» sin número', barraHugo === 'Avisos' && !(await existe(hugo, '#avisosSinLeer')));
+});
+
 (async () => {
   fs.mkdirSync(SALIDA, { recursive: true });
   const navegador = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--lang=es-EC'] });
