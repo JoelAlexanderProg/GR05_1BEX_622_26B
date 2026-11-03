@@ -340,6 +340,62 @@ SECCIONES.push(async ({ sesion }) => {
     propuesta.includes('en Puerta de la Biblioteca Central el ') && llevaAlAcuerdo);
 });
 
+// ---------------------------------------------------------------------------------------------- HU-19
+SECCIONES.push(async ({ sesion }) => {
+  caso('HU-19', 'Cancelar una entrega que no se realizó');
+  const luis = await sesion({ nombre: 'Luis Andrade', correo: 'luis.andrade@epn.edu.ec' });
+  const maria = await sesion({ nombre: 'María Soto', correo: 'maria.soto@epn.edu.ec' });
+  const { idReporte, idReclamacion } = await reclamacionAceptada(luis, maria, 'María Soto',
+    { categoria: 'Otros', descripcion: 'Botella térmica plateada', punto: aMetros(200) });
+  await proponerEntrega(luis, { lugar: 'Entrada del edificio de Sistemas', fecha: proximoDiaHabil('11:00') });
+  await ir(maria, `/devoluciones?acuerdo=${idReclamacion}`);
+  await enviar(maria, '#confirmarAcuerdo');
+
+  await ir(luis, `/devoluciones?reclamacion=${idReclamacion}`);
+  await luis.type('#motivoCancelacion', 'No asistió a la entrega');
+  await captura(luis, 'hu19-formulario-cancelacion.png');
+  await enviar(luis, '#cancelarEntrega');
+  const estado = await textoDe(luis, '#estadoReclamacion');
+  const estadoReporte = await textoDe(luis, '#estadoReporte');
+  await ir(luis, '/reportes');
+  const enMapa = (await textos(luis, '#resultados li a')).some((t) => t.includes('Botella térmica plateada'));
+  paso(1, 'La reclamación queda «Cancelada» y la botella vuelve a estar «Activo» en el mapa',
+    estado === 'Cancelada' && estadoReporte === 'Activo' && enMapa);
+
+  await ir(maria, '/inicio');
+  const fila = await textoDe(maria, '#misReclamaciones tbody tr');
+  await captura(maria, 'hu19-reclamacion-cancelada.png');
+  paso(2, 'María ve su reclamación «Cancelada» con el motivo',
+    fila.includes('Botella térmica plateada') && fila.includes('Cancelada') && fila.includes('No asistió a la entrega'));
+
+  // Otra entrega que sí se realizó: la devolución se confirma y luego se intenta cancelar
+  const entregada = await reclamacionAceptada(luis, maria, 'María Soto',
+    { categoria: 'Otros', descripcion: 'Termo azul', punto: aMetros(210) });
+  await proponerEntrega(luis, { lugar: 'Entrada del edificio de Sistemas', fecha: proximoDiaHabil('12:00') });
+  await ir(maria, `/devoluciones?acuerdo=${entregada.idReclamacion}`);
+  await enviar(maria, '#confirmarAcuerdo');
+  await ir(luis, `/devoluciones?reclamacion=${entregada.idReclamacion}`);
+  await enviar(luis, '#confirmarDevolucion');
+  const sinFormulario = !(await existe(luis, '#formularioCancelacion'));
+  // Intento directo, como si alguien enviara el formulario de una página anterior
+  await Promise.all([luis.waitForNavigation({ waitUntil: 'domcontentloaded' }), luis.evaluate((id) => {
+    const formulario = document.createElement('form');
+    formulario.method = 'post';
+    formulario.action = window.location.pathname;
+    for (const [nombre, valor] of [['accion', 'cancelar'], ['id', id], ['motivoCancelacion', 'Intento tardío']]) {
+      const campo = document.createElement('input');
+      campo.type = 'hidden'; campo.name = nombre; campo.value = valor;
+      formulario.appendChild(campo);
+    }
+    document.body.appendChild(formulario);
+    formulario.submit();
+  }, entregada.idReclamacion)]);
+  const error = await textoDe(luis, 'main');
+  await captura(luis, 'hu19-entrega-realizada.png');
+  paso(3, 'Una entrega ya realizada no muestra la opción y el sistema responde «Solo se puede cancelar una entrega que todavía no se realizó.»',
+    sinFormulario && error.includes('Solo se puede cancelar una entrega que todavía no se realizó.') && idReporte);
+});
+
 /** Quien encontró el objeto abre la reclamación aceptada desde el panel del reporte. */
 async function revisarReclamacionDeAceptada(page, idReporte) {
   await ir(page, `/devoluciones?reporte=${idReporte}`);
