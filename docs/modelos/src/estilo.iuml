@@ -1,0 +1,68 @@
+' Estilo común de los diagramas de diseño de EncuentraEPN (PlantUML).
+' Se incluye al inicio de cada diagrama con: !include estilo.iuml
+' Convención de colores (análisis y secuencia):
+'   interfaz (boundary) = azul, control = naranja, entidad = verde.
+
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam roundCorner 8
+skinparam dpi 150
+
+skinparam ArrowColor #3A4A5E
+skinparam ArrowFontColor #3A4A5E
+skinparam ArrowFontSize 10
+
+skinparam NoteBackgroundColor #FFF8E1
+skinparam NoteBorderColor #C9A227
+skinparam NoteFontSize 10
+
+skinparam ActorBorderColor #12355B
+skinparam ActorBackgroundColor #FFFFFF
+
+skinparam UsecaseBorderColor #12355B
+skinparam UsecaseBackgroundColor #EAF1FB
+
+skinparam RectangleBorderColor #12355B
+skinparam RectangleFontStyle bold
+
+skinparam BoundaryBorderColor #12355B
+skinparam BoundaryBackgroundColor #DCE8F7
+skinparam ControlBorderColor #9A5B13
+skinparam ControlBackgroundColor #FCE7CC
+skinparam EntityBorderColor #1E6B3A
+skinparam EntityBackgroundColor #DDF1E3
+skinparam DatabaseBorderColor #12355B
+skinparam DatabaseBackgroundColor #F1F4F8
+
+skinparam ClassBorderColor #12355B
+skinparam ClassBackgroundColor #FFFFFF
+skinparam ClassHeaderBackgroundColor #EAF1FB
+skinparam ClassAttributeIconSize 0
+skinparam ClassFontStyle bold
+skinparam StereotypeFontSize 10
+
+skinparam PackageBorderColor #7A8CA5
+skinparam PackageFontColor #12355B
+skinparam PackageBackgroundColor #FBFCFE
+
+skinparam ActivityBorderColor #12355B
+skinparam ActivityBackgroundColor #EAF1FB
+skinparam ActivityStartColor #12355B
+skinparam ActivityEndColor #12355B
+skinparam ActivityDiamondBorderColor #12355B
+skinparam SwimlaneBorderColor #7A8CA5
+skinparam SwimlaneTitleFontStyle bold
+
+skinparam SequenceLifeLineBorderColor #7A8CA5
+skinparam SequenceParticipantBorderColor #12355B
+skinparam SequenceParticipantBackgroundColor #F1F4F8
+skinparam SequenceGroupBorderColor #7A8CA5
+skinparam SequenceGroupHeaderFontStyle bold
+skinparam SequenceBoxBorderColor #7A8CA5
+skinparam SequenceMessageAlignment left
+skinparam SequenceArrowThickness 1
+skinparam maxMessageSize 125
+skinparam SequenceDividerFontSize 12
+skinparam SequenceDividerBackgroundColor #EAF1FB

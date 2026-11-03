@@ -1,0 +1,41 @@
+@startuml sec-01
+!include estilo.iuml
+' SEC-01 Registrar objeto perdido o encontrado (CU-01), en términos de diseño.
+' Conserva la numeración de mensajes del diagrama de la Tarea 1; las letras (11a) son mensajes de persistencia añadidos.
+hide footbox
+
+actor "Reportante" as R
+boundary "formularioReporte.jsp" as F
+control ":ControlRegistroReporte" as C
+participant ":ReporteDAO" as D
+entity ":Ubicacion" as U
+entity ":Reporte" as RP
+entity ":Pregunta\nVerificacion" as P
+
+R -> C : 1. mostrarFormulario()  [GET /reportes/nuevo]
+C -> F : forward(categorias)
+F --> R : 2. Formulario disponible
+note over R, F : El usuario completa tipo, categoría, descripción, fecha y ubicación;\nsi es encontrado, añade preguntas.
+R -> F : 3. solicitarPublicacion(datos)
+F -> C : 4. registrarReporte(usuario, datos)  [POST /reportes/nuevo]
+activate C
+note over C : validarCampos(datos) y categoría
+create U
+C -> U : 5. «create» Ubicacion(latitud, longitud, zona)
+C -> U : 6. estaDentroDelCampus()
+U --> C : 7. true
+create RP
+C -> RP : 8. «create» Reporte(datos, usuario, categoria, ubicacion)
+opt tipo = ENCONTRADO
+  C -> RP : 9. agregarPregunta(texto)
+  create P
+  RP -> P : «create» PreguntaVerificacion(reporte, texto)
+end
+C -> RP : 10. publicar()
+RP --> C : 11. Reporte ACTIVO
+C -> D : 11a. guardar(reporte)  [persist: reporte y preguntas]
+C --> F : 12. reporte registrado  [redirect ?registrado=id]
+deactivate C
+F -> F : 13. mostrarConfirmacion(reporte)
+F --> R : 14. Reporte publicado
+@enduml

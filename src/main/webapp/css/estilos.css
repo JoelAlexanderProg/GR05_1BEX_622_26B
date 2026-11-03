@@ -1,0 +1,311 @@
+body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f3f5f8;
+    color: #1f2933;
+}
+
+button, input, select, textarea {
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+/* ---------- Barra superior ---------- */
+.barra {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 12px 24px;
+    background: #12355b;
+    color: #ffffff;
+}
+
+.barra a {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.barra nav {
+    display: flex;
+    gap: 18px;
+    flex: 1;
+}
+
+.barra .marca {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.barra .sesion {
+    display: flex;
+    gap: 12px;
+}
+
+.barra .sesion a {
+    text-decoration: underline;
+}
+
+/* ---------- Contenido ---------- */
+main {
+    max-width: 1040px;
+    margin: 24px auto;
+    padding: 24px 28px;
+    background: #ffffff;
+    border: 1px solid #d8dee6;
+    border-radius: 8px;
+}
+
+h1 {
+    margin-top: 0;
+    font-size: 1.5rem;
+    color: #12355b;
+}
+
+h2 {
+    margin-top: 28px;
+    font-size: 1.15rem;
+    color: #12355b;
+}
+
+small {
+    color: #52606d;
+}
+
+.boton {
+    display: inline-block;
+    padding: 8px 16px;
+    border: 1px solid #12355b;
+    border-radius: 6px;
+    background: #12355b;
+    color: #ffffff;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.boton.secundario {
+    background: #ffffff;
+    color: #12355b;
+}
+
+.motivo {
+    margin-top: 2px;
+    font-size: 0.9em;
+    color: #4a5562;
+}
+
+.acciones {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.exito, .error {
+    padding: 8px 12px;
+    border-left: 4px solid #1e6b3a;
+    background: #e3f4e8;
+}
+
+.error {
+    border-left-color: #b3261e;
+    background: #fdecea;
+}
+
+.vacio {
+    color: #52606d;
+}
+
+.etiqueta {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.etiqueta.perdido {
+    background: #b3261e;
+}
+
+.etiqueta.encontrado {
+    background: #1e6b3a;
+}
+
+/* ---------- Formularios ---------- */
+.formulario {
+    display: grid;
+    gap: 6px;
+    max-width: 460px;
+}
+
+.formulario.ancho {
+    max-width: 720px;
+}
+
+.formulario label, .formulario legend {
+    margin-top: 8px;
+    font-weight: 600;
+}
+
+.formulario label.opcion {
+    margin-top: 0;
+    margin-right: 16px;
+    font-weight: 400;
+}
+
+.formulario input[type="text"],
+.formulario input[type="email"],
+.formulario input[type="date"],
+.formulario input[type="datetime-local"],
+.formulario select,
+.formulario textarea {
+    padding: 8px;
+    border: 1px solid #b8c2cc;
+    border-radius: 6px;
+}
+
+.formulario fieldset {
+    display: grid;
+    gap: 6px;
+    margin: 8px 0 0;
+    padding: 8px 12px 12px;
+    border: 1px solid #d8dee6;
+    border-radius: 6px;
+}
+
+.formulario fieldset[hidden] {
+    display: none;
+}
+
+.filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #f5f8fc;
+    border: 1px solid #d8dee6;
+    border-radius: 6px;
+}
+
+.filtros label {
+    display: grid;
+    gap: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.filtros select, .filtros input {
+    padding: 6px;
+    border: 1px solid #b8c2cc;
+    border-radius: 6px;
+}
+
+/* ---------- Mapa y resultados ---------- */
+.mapa {
+    height: 420px;
+    border: 1px solid #b8c2cc;
+    border-radius: 6px;
+}
+
+.formulario .mapa {
+    height: 340px;
+}
+
+.dos-columnas {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 20px;
+    align-items: start;
+}
+
+.dos-columnas h2 {
+    margin-top: 0;
+}
+
+.dos-columnas > dl + .mapa {
+    height: 300px;
+}
+
+.resultados {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.resultados li {
+    display: grid;
+    gap: 2px;
+    padding: 8px 0;
+    border-bottom: 1px solid #d8dee6;
+}
+
+.resultados a {
+    color: #12355b;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+/* ---------- Datos y tablas ---------- */
+.datos {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px 16px;
+    margin: 12px 0;
+}
+
+.datos dt {
+    font-weight: 600;
+    color: #52606d;
+}
+
+.datos dd {
+    margin: 0;
+}
+
+.datos ol {
+    margin: 0;
+    padding-left: 18px;
+}
+
+table {
+    width: 100%;
+    margin-top: 8px;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #d8dee6;
+    text-align: left;
+}
+
+th {
+    background: #eaf1fb;
+    color: #12355b;
+}
+
+td.enlaces a {
+    margin-right: 12px;
+}
+
+td.enlaces form {
+    display: inline;
+}
+
+.boton-enlace {
+    padding: 0;
+    border: none;
+    background: none;
+    color: #b3261e;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+@media (max-width: 760px) {
+    .dos-columnas {
+        grid-template-columns: 1fr;
+    }
+}

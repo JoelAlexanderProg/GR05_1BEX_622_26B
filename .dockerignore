@@ -1,0 +1,7 @@
+.git
+target
+docs
+jenkins
+pruebas
+node_modules
+*.md

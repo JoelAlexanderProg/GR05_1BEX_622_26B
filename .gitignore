@@ -1,0 +1,10 @@
+target/
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+node_modules/
+pruebas/capturas/
+package*.json

@@ -1,0 +1,7 @@
+<%-- Contenedor del mapa del campus. Los límites vienen de la clase Campus. --%>
+<%@ page import="ec.edu.epn.encuentraepn.modelo.Campus" %>
+<div id="mapa" class="mapa"
+     data-lat-min="${Campus.LAT_MIN}" data-lat-max="${Campus.LAT_MAX}"
+     data-lon-min="${Campus.LON_MIN}" data-lon-max="${Campus.LON_MAX}"></div>
+<script src="${ctx}/lib/leaflet/leaflet.js"></script>
+<script src="${ctx}/js/mapa.js"></script>

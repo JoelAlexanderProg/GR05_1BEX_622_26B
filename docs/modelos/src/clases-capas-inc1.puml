@@ -1,0 +1,90 @@
+@startuml clases-capas-inc1
+!include estilo.iuml
+' Diagrama de clases de diseño: vistas, controles y persistencia del Incremento 1.
+' Refina «Interfaces y controles — Incremento 1» de la Tarea 1: cada «boundary» es una JSP
+' y cada «control» es un Servlet con las mismas operaciones.
+left to right direction
+skinparam nodesep 30
+skinparam ranksep 70
+hide empty members
+hide <<JSP>> circle
+
+package "vista (JSP) — «boundary»" {
+  class "formularioReporte.jsp" as fr <<JSP>>
+  class "mapaReportes.jsp" as mr <<JSP>>
+  class "detalleReporte.jsp" as dr <<JSP>>
+}
+
+package "controlador (Servlets) — «control»" {
+  abstract class ControlBase {
+    # actor(request) : Usuario
+    # leerId(request, parametro) : UUID
+    # mostrar(vista, request, response)
+    # redirigir(request, response, ruta)
+  }
+  class ControlRegistroReporte <<@WebServlet("/reportes/nuevo")>> {
+    - reporteDAO : ReporteDAO
+    - categoriaDAO : CategoriaDAO
+    # doGet(request, response)
+    # doPost(request, response)
+    + registrarReporte(usuario, datos) : Reporte
+  }
+  class ControlConsultaReportes <<@WebServlet("/reportes", "/reportes/detalle")>> {
+    - reporteDAO : ReporteDAO
+    - categoriaDAO : CategoriaDAO
+    # doGet(request, response)
+    + consultarReportes(filtros) : List<Reporte>
+    + consultarDetallePublico(idReporte) : DatosPublicos
+  }
+}
+
+package "web (sesión)" {
+  class SesionUsuario {
+    + iniciar(request, usuario)
+    + hayUsuario(request) : boolean
+    + usuario(request) : Usuario
+    + cerrar(request)
+  }
+}
+
+package "persistencia (DAO + JPA)" {
+  abstract class "GenericDAO<T>" as GenericDAO {
+    + guardar(entidad : T) : T
+    + actualizar(entidad : T) : T
+    + buscarPorId(id : UUID) : T
+  }
+  class ReporteDAO {
+    + consultarActivos(filtros) : List<Reporte>
+    + listarPorAutor(autor) : List<Reporte>
+  }
+  class CategoriaDAO {
+    + listarTodas() : List<Categoria>
+  }
+  class UsuarioDAO {
+    + buscarPorCorreo(correo) : Usuario
+    + obtenerORegistrar(nombre, correo) : Usuario
+  }
+  class JPAUtil {
+    + {static} getEntityManager() : EntityManager
+    + {static} cerrarEntityManager() : void
+  }
+}
+
+fr ..> ControlRegistroReporte : usa
+mr ..> ControlConsultaReportes : usa
+dr ..> ControlConsultaReportes : usa
+
+ControlBase <|- ControlRegistroReporte
+ControlBase <|- ControlConsultaReportes
+
+ControlRegistroReporte --> ReporteDAO
+ControlRegistroReporte --> CategoriaDAO
+ControlConsultaReportes --> ReporteDAO
+ControlBase --> SesionUsuario
+SesionUsuario --> UsuarioDAO
+
+ReporteDAO --|> GenericDAO
+CategoriaDAO --|> GenericDAO
+UsuarioDAO --|> GenericDAO
+GenericDAO ..> JPAUtil
+@enduml

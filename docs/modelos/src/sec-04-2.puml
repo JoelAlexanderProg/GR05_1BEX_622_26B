@@ -1,0 +1,52 @@
+@startuml sec-04-2
+!include estilo.iuml
+' SEC-04 Gestionar devolución del objeto (CU-04), en términos de diseño. Parte 2 de 2: mensajes 25 a 45.
+' Conserva la numeración de mensajes del diagrama de la Tarea 1; las letras (35a, 43a) son mensajes de persistencia añadidos.
+hide footbox
+
+actor "Encontrante" as E
+boundary "panelDevolucion.jsp" as P
+control ":ControlDevoluciones" as C
+participant ":ReclamacionDAO" as D
+entity ":Reclamacion" as RC
+entity ":Reporte" as RP
+entity ":AcuerdoEntrega" as A
+boundary "vistaAcuerdo\nEntrega.jsp" as V
+actor "Reclamante" as R
+
+note over C, R : En otra sesión, el reclamante consulta la propuesta desde «Mis reclamaciones».\nNo se supone una notificación automática.
+R -> V : 25. Consultar propuesta  [GET /devoluciones?acuerdo]
+V -> C : 26. consultarAcuerdo(actor, id)
+activate C
+note over C : verifica que el actor participe en la reclamación
+C -> RC : 27. getAcuerdo()
+RC --> C : 28. acuerdo
+C --> V : 29. acuerdo autorizado  [forward]
+deactivate C
+V -> V : 30. mostrarPropuesta(acuerdo)
+V --> R : 31. Lugar y fecha propuestos
+
+R -> V : 32. confirmarAcuerdo(id)
+V -> C : 33. confirmarAcuerdo(actor, id)  [POST accion=confirmarAcuerdo]
+activate C
+C -> A : 34. confirmar(fecha)
+A --> C : 35. Fecha de confirmación registrada
+C -> D : 35a. actualizar(reclamacion)
+C --> V : 36. Acuerdo confirmado  [redirect]
+deactivate C
+V --> R : 37. Confirmación visible
+
+note over E, R : Transcurre el tiempo acordado. Encontrante y reclamante realizan la entrega física fuera de la aplicación.
+E -> P : 38. confirmarDevolucion(id)
+P -> C : 39. confirmarDevolucion(actor, id, fecha)  [POST accion=confirmarDevolucion]
+activate C
+note over C : comprueba acuerdo confirmado y reclamación aceptada
+C -> RP : 40. marcarEntregado(fecha)
+RP --> C : 41. ENTREGADO y fechaDevolucion
+C -> RC : 42. completar()
+RC --> C : 43. COMPLETADA
+C -> D : 43a. actualizar(reclamacion)  [una sola transacción]
+C --> P : 44. Devolución registrada  [redirect]
+deactivate C
+P --> E : 45. Confirmación de devolución
+@enduml

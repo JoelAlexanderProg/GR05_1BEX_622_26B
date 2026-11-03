@@ -1,0 +1,56 @@
+# Configuración de Jenkins como código (plugin Configuration as Code).
+jenkins:
+  systemMessage: "Integración continua de EncuentraEPN · Grupo 5 · Examen 1B"
+  numExecutors: 2
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          # La clave se pasa al iniciar el contenedor: -e JENKINS_ADMIN_PASSWORD=...
+          password: "${JENKINS_ADMIN_PASSWORD:-admin}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: true
+
+unclassified:
+  location:
+    url: "http://localhost:8090/"
+  scmGit:
+    # Cada persona se identifica por su correo y se muestra con su nombre en los cambios de cada ejecución
+    createAccountBasedOnEmail: true
+
+# Tarea Pipeline del proyecto: toma el Jenkinsfile del repositorio público (rama main)
+jobs:
+  - script: |
+      pipelineJob('GR05_1BEX_622_26B') {
+        description('Integración continua de EncuentraEPN: compila, ejecuta las pruebas unitarias y empaqueta el WAR.')
+        properties {
+          pipelineTriggers {
+            triggers {
+              pollSCM {
+                scmpoll_spec('H/2 * * * *')
+              }
+            }
+          }
+        }
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('https://github.com/JoelAlexanderProg/GR05_1BEX_622_26B.git')
+                }
+                branch('*/main')
+                extensions {
+                  // Los cambios muestran al autor del commit (en los commits hechos desde la web de GitHub,
+                  // el committer es «GitHub»)
+                  authorInChangelog()
+                }
+              }
+            }
+            scriptPath('Jenkinsfile')
+            lightweight(true)
+          }
+        }
+      }

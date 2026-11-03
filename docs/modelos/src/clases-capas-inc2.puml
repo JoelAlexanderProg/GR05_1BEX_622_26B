@@ -1,0 +1,70 @@
+@startuml clases-capas-inc2
+!include estilo.iuml
+' Diagrama de clases de diseño: vistas, controles y persistencia que añade el Incremento 2.
+' Refina «Interfaces y controles añadidos — Incremento 2» de la Tarea 1.
+left to right direction
+skinparam nodesep 30
+skinparam ranksep 70
+hide empty members
+hide <<JSP>> circle
+
+package "vista (JSP) — «boundary»" {
+  class "detalleReporte.jsp" as dr <<JSP>>
+  class "formularioReclamacion.jsp" as frc <<JSP>>
+  class "panelDevolucion.jsp" as pd <<JSP>>
+  class "vistaAcuerdoEntrega.jsp" as va <<JSP>>
+}
+
+package "controlador (Servlets) — «control»" {
+  abstract class ControlBase
+  class ControlReclamaciones <<@WebServlet("/reclamaciones/nueva")>> {
+    - reporteDAO : ReporteDAO
+    - reclamacionDAO : ReclamacionDAO
+    # doGet(request, response)
+    # doPost(request, response)
+    + obtenerPreguntas(actor, reporteId) : List<PreguntaVerificacion>
+    + registrarReclamacion(actor, reporteId, respuestas) : Reclamacion
+  }
+  class ControlDevoluciones <<@WebServlet("/devoluciones")>> {
+    - reporteDAO : ReporteDAO
+    - reclamacionDAO : ReclamacionDAO
+    # doGet(request, response)
+    # doPost(request, response)
+    + listarPendientes(actor, reporteId) : List<Reclamacion>
+    + consultarRespuestas(actor, reclamacionId) : List<RespuestaVerificacion>
+    + aceptarReclamacion(actor, id) : void
+    <color:#1A56C4>+ rechazarReclamacion(actor, id, motivo) : void</color>
+    + proponerEntrega(actor, id, lugar, fecha) : AcuerdoEntrega
+    + consultarAcuerdo(actor, id) : AcuerdoEntrega
+    + confirmarAcuerdo(actor, id) : void
+    + confirmarDevolucion(actor, id, fecha) : void
+  }
+}
+
+package "persistencia (DAO + JPA)" {
+  abstract class "GenericDAO<T>" as GenericDAO
+  class ReporteDAO
+  class ReclamacionDAO {
+    + listarPendientes(reporte) : List<Reclamacion>
+    + buscarEnCurso(reporte) : Reclamacion
+    + existeDe(reclamante, reporte) : boolean
+    + listarPorReclamante(reclamante) : List<Reclamacion>
+  }
+}
+
+dr ..> ControlReclamaciones : usa
+frc ..> ControlReclamaciones : usa
+pd ..> ControlDevoluciones : usa
+va ..> ControlDevoluciones : usa
+
+ControlBase <|- ControlReclamaciones
+ControlBase <|- ControlDevoluciones
+
+ControlReclamaciones --> ReporteDAO
+ControlReclamaciones --> ReclamacionDAO
+ControlDevoluciones --> ReporteDAO
+ControlDevoluciones --> ReclamacionDAO
+
+ReporteDAO --|> GenericDAO
+ReclamacionDAO --|> GenericDAO
+@enduml

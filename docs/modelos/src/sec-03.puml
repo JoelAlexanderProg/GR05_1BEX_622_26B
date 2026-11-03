@@ -1,0 +1,48 @@
+@startuml sec-03
+!include estilo.iuml
+' SEC-03 Reclamar un objeto encontrado (CU-03), en términos de diseño.
+' Conserva la numeración de mensajes del diagrama de la Tarea 1; 15a es el mensaje de persistencia añadido.
+hide footbox
+
+actor "Reclamante" as R
+boundary "detalleReporte.jsp" as DT
+boundary "formulario\nReclamacion.jsp" as F
+control ":ControlReclamaciones" as C
+participant ":ReporteDAO" as RD
+participant ":ReclamacionDAO" as CD
+entity ":Reporte" as RP
+entity ":Reclamacion" as RC
+entity ":Respuesta\nVerificacion" as RV
+
+R -> DT : 1. solicitarReclamacion(idReporte)
+DT -> C : 2. obtenerPreguntas(actor, reporteId)  [GET /reclamaciones/nueva?reporte]
+activate C
+C -> RD : 3. buscarPorId(reporteId)
+C -> RP : esEncontrado(), estaActivo(), esAutor(actor)
+RP --> C : 4. ENCONTRADO, ACTIVO, autor distinto
+C -> RP : 5. getPreguntas()
+RP --> C : 6. Preguntas de verificación
+C --> F : 7. preguntas  [forward]
+deactivate C
+F -> F : 8. mostrarPreguntas(preguntas)
+F --> R : 9. Preguntas disponibles
+
+R -> F : 10. enviarRespuestas(respuestas)
+F -> C : 11. registrarReclamacion(actor, reporteId, respuestas)  [POST /reclamaciones/nueva]
+activate C
+C -> RP : 12. esEncontrado(), estaActivo(), esAutor(actor)
+RP --> C : 13. Disponible y autor distinto
+note over C : comprueba que haya una respuesta por cada\npregunta del reporte, sin duplicados
+create RC
+C -> RC : 14. «create» Reclamacion(actor, reporte)  [PENDIENTE]
+loop por cada pregunta
+  C -> RC : 15. agregarRespuesta(pregunta, texto)
+  create RV
+  RC -> RV : «create» RespuestaVerificacion(reclamacion, pregunta, texto)
+end
+C -> CD : 15a. guardar(reclamacion)  [persist: reclamación y respuestas]
+C --> F : 16. reclamación pendiente  [redirect ?registrada=id]
+deactivate C
+F -> F : 17. mostrarConfirmacion(reclamacion)
+F --> R : 18. Reclamación registrada
+@enduml

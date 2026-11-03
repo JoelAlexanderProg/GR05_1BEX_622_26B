@@ -1,0 +1,56 @@
+@startuml sec-04-1
+!include estilo.iuml
+' SEC-04 Gestionar devolución del objeto (CU-04), en términos de diseño. Parte 1 de 2: mensajes 1 a 24.
+' Conserva la numeración de mensajes del diagrama de la Tarea 1; las letras (19a, 23a) son mensajes de persistencia añadidos.
+hide footbox
+
+actor "Encontrante" as E
+boundary "panelDevolucion.jsp" as P
+control ":ControlDevoluciones" as C
+participant ":ReclamacionDAO" as D
+entity ":Reclamacion" as RC
+entity ":Reporte" as RP
+entity ":AcuerdoEntrega" as A
+
+E -> P : 1. Abrir reclamaciones del reporte  [GET /devoluciones?reporte]
+P -> C : 2. listarPendientes(actor, reporteId)
+activate C
+note over C : verifica que el actor sea el autor del reporte
+C -> D : 3. listarPendientes(reporte)
+D --> C : 4. Reclamaciones pendientes
+C --> P : 5. lista  [forward]
+deactivate C
+P -> P : 6. mostrarReclamaciones(lista)
+
+E -> P : 7. Seleccionar reclamación
+P -> C : 8. consultarRespuestas(actor, reclamacionId)  [GET /devoluciones?reclamacion]
+activate C
+C -> RC : 9. getRespuestas()
+RC --> C : 10. Preguntas y respuestas privadas
+C --> P : 11. respuestas  [forward]
+deactivate C
+P -> P : 12. mostrarRespuestas(respuestas)
+P --> E : 13. Respuestas disponibles para revisión
+
+E -> P : 14. aceptarReclamacion(id)
+P -> C : 15. aceptarReclamacion(actor, id)  [POST accion=aceptar]
+activate C
+note over C : comprueba que no haya otra reclamación aceptada
+C -> RC : 16. aceptar()
+RC --> C : 17. ACEPTADA
+C -> RP : 18. reservar()
+RP --> C : 19. RESERVADO
+C -> D : 19a. actualizar(reclamacion)  [una sola transacción]
+C --> P : 20. Aceptación registrada  [redirect]
+deactivate C
+
+E -> P : 21. proponerEntrega(datos)
+P -> C : 22. proponerEntrega(actor, id, lugar, fecha)  [POST accion=proponer]
+activate C
+create A
+C -> A : 23. «create» AcuerdoEntrega(reclamacion, lugar, fecha)
+C -> RC : registrarAcuerdo(acuerdo)
+C -> D : 23a. actualizar(reclamacion)
+C --> P : 24. Propuesta guardada  [redirect]
+deactivate C
+@enduml

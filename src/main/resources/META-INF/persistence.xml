@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence" version="3.0">
+    <persistence-unit name="encuentraepnPU" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <class>ec.edu.epn.encuentraepn.modelo.Usuario</class>
+        <class>ec.edu.epn.encuentraepn.modelo.Categoria</class>
+        <class>ec.edu.epn.encuentraepn.modelo.Reporte</class>
+        <class>ec.edu.epn.encuentraepn.modelo.Ubicacion</class>
+        <class>ec.edu.epn.encuentraepn.modelo.PreguntaVerificacion</class>
+        <class>ec.edu.epn.encuentraepn.modelo.Reclamacion</class>
+        <class>ec.edu.epn.encuentraepn.modelo.RespuestaVerificacion</class>
+        <class>ec.edu.epn.encuentraepn.modelo.AcuerdoEntrega</class>
+        <properties>
+            <!-- Base de datos H2 guardada en un archivo dentro de la carpeta del usuario -->
+            <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:file:~/gr05_1bex/encuentraepn"/>
+            <property name="jakarta.persistence.jdbc.user" value="sa"/>
+            <property name="jakarta.persistence.jdbc.password" value=""/>
+            <!-- Hibernate crea o actualiza las tablas a partir de las entidades -->
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
+            <property name="hibernate.show_sql" value="false"/>
+        </properties>
+    </persistence-unit>
+</persistence>

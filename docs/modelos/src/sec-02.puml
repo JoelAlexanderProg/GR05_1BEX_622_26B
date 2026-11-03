@@ -1,0 +1,44 @@
+@startuml sec-02
+!include estilo.iuml
+' SEC-02 Consultar y filtrar reportes en el mapa (CU-02), en términos de diseño.
+' Conserva la numeración de mensajes del diagrama de la Tarea 1.
+hide footbox
+
+actor "Miembro de la\ncomunidad EPN" as M
+boundary "mapaReportes.jsp" as MP
+boundary "detalleReporte.jsp" as DT
+control ":ControlConsulta\nReportes" as C
+participant ":ReporteDAO" as D
+entity ":DatosPublicos" as DP
+
+M -> C : 1. Abrir sección de búsqueda  [GET /reportes]
+activate C
+C -> C : 2. consultarReportes(filtros iniciales)
+C -> D : 3. consultarActivos(filtros)
+D --> C : 4. Reportes con categoría y ubicación
+C --> MP : 5. Reportes públicos  [forward]
+deactivate C
+MP -> MP : 6. mostrarMapa(reportes)
+MP --> M : 7. Mapa inicial
+
+M -> MP : 8. aplicarFiltros(filtros)
+MP -> C : 9. consultarReportes(filtros)  [GET /reportes?tipo&categoria&desde&hasta&zona]
+activate C
+C -> D : 10. consultarActivos(filtros)  [JPQL por tipo, categoría, fecha y zona]
+D --> C : 11. Reportes coincidentes
+C --> MP : 12. Resultados públicos  [forward]
+deactivate C
+MP -> MP : 13. mostrarMapa(reportes)
+MP --> M : 14. Marcadores actualizados
+
+M -> MP : 15. seleccionarMarcador(idReporte)
+MP -> C : 16. consultarDetallePublico(idReporte)  [GET /reportes/detalle?id]
+activate C
+C -> D : 17. buscarPorId(idReporte)
+D --> C : 18. Datos del reporte
+create DP
+C -> DP : 19. «create» DatosPublicos(reporte)
+C -> DT : 20. mostrarDetalle(datosPublicos)  [forward]
+deactivate C
+DT --> M : 21. Detalle público visible
+@enduml
