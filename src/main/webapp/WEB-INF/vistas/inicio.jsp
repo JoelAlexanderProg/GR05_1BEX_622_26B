@@ -98,6 +98,10 @@
                             <c:if test="${not empty reclamacion.motivoRechazo}">
                                 <div class="motivo">Motivo: <c:out value="${reclamacion.motivoRechazo}"/></div>
                             </c:if>
+                            <%-- HU-19: motivo de una entrega cancelada --%>
+                            <c:if test="${not empty reclamacion.motivoCancelacion}">
+                                <div class="motivo">Motivo: <c:out value="${reclamacion.motivoCancelacion}"/></div>
+                            </c:if>
                         </td>
                         <td class="enlaces">
                             <c:if test="${not empty reclamacion.acuerdo}">

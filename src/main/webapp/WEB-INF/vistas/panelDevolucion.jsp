@@ -54,6 +54,9 @@
     <c:if test="${not empty reclamacion.motivoRechazo}">
         <p>Motivo del rechazo: <span id="motivoRechazo"><c:out value="${reclamacion.motivoRechazo}"/></span></p>
     </c:if>
+    <c:if test="${not empty reclamacion.motivoCancelacion}">
+        <p>Motivo de la cancelación: <span id="motivoCancelacion"><c:out value="${reclamacion.motivoCancelacion}"/></span></p>
+    </c:if>
     <table id="respuestas">
         <thead>
         <tr><th>Pregunta</th><th>Respuesta del reclamante</th></tr>
@@ -128,6 +131,21 @@
             </c:if>
         </c:when>
     </c:choose>
+
+    <%-- HU-19: una entrega acordada que no se realizó se cancela y el objeto vuelve a estar disponible --%>
+    <c:if test="${reclamacion.estaAceptada()}">
+        <h2>Cancelar la entrega</h2>
+        <form method="post" action="${ctx}/devoluciones" class="formulario" id="formularioCancelacion">
+            <input type="hidden" name="accion" value="cancelar">
+            <input type="hidden" name="id" value="${reclamacion.id}">
+            <label for="motivoCancelacion">Si la entrega no se realizó, indique el motivo (lo verá el reclamante).
+                El objeto volverá a estar disponible en el mapa.</label>
+            <textarea id="motivoCancelacion" name="motivoCancelacion" rows="2" maxlength="200" required></textarea>
+            <div class="acciones">
+                <button type="submit" class="boton secundario" id="cancelarEntrega">Cancelar la entrega</button>
+            </div>
+        </form>
+    </c:if>
 </c:if>
 
 <div class="acciones">
