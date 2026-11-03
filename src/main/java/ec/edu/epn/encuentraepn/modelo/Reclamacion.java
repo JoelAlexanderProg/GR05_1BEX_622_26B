@@ -59,6 +59,12 @@ public class Reclamacion {
 
     private LocalDateTime fechaRechazo;
 
+    /** HU-19: por qué se canceló una entrega que no se realizó. */
+    @Column(length = MAX_MOTIVO)
+    private String motivoCancelacion;
+
+    private LocalDateTime fechaCancelacion;
+
     protected Reclamacion() {
     }
 
@@ -98,18 +104,31 @@ public class Reclamacion {
      */
     public void rechazar(String motivo) {
         exigirEstado(EstadoReclamacion.PENDIENTE);
-        String motivoValido = validarMotivo(motivo);
+        String motivoValido = validarMotivo(motivo, "del rechazo");
         estado = EstadoReclamacion.RECHAZADA;
         motivoRechazo = motivoValido;
         fechaRechazo = ahora();
     }
 
     /**
-     * Devuelve el motivo sin espacios al inicio ni al final, o lanza IllegalArgumentException si no es válido.
+     * HU-19: quien encontró el objeto cancela una entrega acordada que no se realizó, con el motivo.
+     * Solo se cancela una reclamación aceptada: si ya se completó, el objeto ya se entregó.
      */
-    private static String validarMotivo(String motivo) {
+    public void cancelar(String motivo) {
+        exigirEstado(EstadoReclamacion.ACEPTADA);
+        String motivoValido = validarMotivo(motivo, "de la cancelación");
+        estado = EstadoReclamacion.CANCELADA;
+        motivoCancelacion = motivoValido;
+        fechaCancelacion = ahora();
+    }
+
+    /**
+     * Devuelve el motivo sin espacios al inicio ni al final, o lanza IllegalArgumentException si no es válido.
+     * «deQue» completa el mensaje: «del rechazo», «de la cancelación».
+     */
+    private static String validarMotivo(String motivo, String deQue) {
         if (motivo == null || motivo.isBlank()) {
-            throw new IllegalArgumentException("Escriba el motivo del rechazo.");
+            throw new IllegalArgumentException("Escriba el motivo " + deQue + ".");
         }
         String motivoSinEspacios = motivo.trim();
         if (motivoSinEspacios.length() > MAX_MOTIVO) {
@@ -169,6 +188,14 @@ public class Reclamacion {
 
     public AcuerdoEntrega getAcuerdo() {
         return acuerdo;
+    }
+
+    public String getMotivoCancelacion() {
+        return motivoCancelacion;
+    }
+
+    public LocalDateTime getFechaCancelacion() {
+        return fechaCancelacion;
     }
 
     public String getMotivoRechazo() {
