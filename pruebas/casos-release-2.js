@@ -107,6 +107,56 @@ async function registrarReporte(page, datos) {
   return completarReporte(page, datos);
 }
 
+/** Fecha y hora (aaaa-mm-ddThh:mm) del próximo día de lunes a viernes, a la hora indicada. */
+function proximoDiaHabil(hora) {
+  const fecha = new Date();
+  do {
+    fecha.setDate(fecha.getDate() + 1);
+  } while (fecha.getDay() === 0 || fecha.getDay() === 6);
+  const dos = (n) => String(n).padStart(2, '0');
+  return `${fecha.getFullYear()}-${dos(fecha.getMonth() + 1)}-${dos(fecha.getDate())}T${hora}`;
+}
+
+/** El reclamante responde las preguntas de verificación del objeto encontrado. */
+async function reclamar(page, idReporte) {
+  await ir(page, `/reportes/detalle?id=${idReporte}`);
+  await enviar(page, '#reclamar');
+  for (const campo of await page.$$('form.formulario input[type="text"]')) {
+    await campo.type('Respuesta de prueba');
+  }
+  await enviar(page, 'form.formulario button[type="submit"]');
+}
+
+/** Quien encontró el objeto abre la reclamación pendiente de la persona indicada. */
+async function revisarReclamacionDe(page, idReporte, nombre) {
+  await ir(page, `/devoluciones?reporte=${idReporte}`);
+  const enlace = await page.$$eval('#pendientes tbody tr', (filas, n) =>
+    filas.find((f) => f.innerText.includes(n)).querySelector('a').href, nombre);
+  await page.goto(enlace, { waitUntil: 'domcontentloaded' });
+}
+
+/** Con la reclamación aceptada abierta, propone el lugar (o un punto oficial) y la fecha de la entrega. */
+async function proponerEntrega(page, { lugar, punto, fecha }) {
+  if (punto) {
+    const valor = await page.$$eval('#punto option', (opciones, nombre) =>
+      opciones.find((o) => o.textContent.includes(nombre)).value, punto);
+    await page.select('#punto', valor);
+  }
+  if (lugar) await page.type('#lugar', lugar);
+  await page.$eval('#fecha', (campo, f) => { campo.value = f; }, fecha);
+  await enviar(page, '#proponer');
+}
+
+/** Registra un objeto encontrado, lo reclama el reclamante y quien lo encontró acepta la reclamación. */
+async function reclamacionAceptada(encontrante, reclamante, nombreReclamante, datos) {
+  const idReporte = await registrarReporte(encontrante, { tipo: 'ENCONTRADO', fecha: haceDias(1),
+    preguntas: ['¿Qué tiene escrito?'], ...datos });
+  await reclamar(reclamante, idReporte);
+  await revisarReclamacionDe(encontrante, idReporte, nombreReclamante);
+  await enviar(encontrante, '#aceptar');
+  return { idReporte, idReclamacion: new URL(encontrante.url()).searchParams.get('reclamacion') };
+}
+
 const SECCIONES = [];
 
 // ---------------------------------------------------------------------------------------------- HU-14
@@ -172,10 +222,10 @@ SECCIONES.push(async ({ sesion }) => {
     descripcion: 'Carnet estudiantil de Carla', fecha: haceDias(1), punto: aMetros(-200) });
   await ir(diego, `/reportes/nuevo?perdido=${idCarnet}`);
   await ir(carla, '/inicio');
-  await carla.$$eval('#misReportes tbody tr', (filas) => {
-    filas.find((f) => f.innerText.includes('Carnet estudiantil de Carla')).querySelector('button.boton-enlace').click();
-  });
-  await carla.waitForNavigation({ waitUntil: 'domcontentloaded' });
+  await Promise.all([carla.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+    carla.$$eval('#misReportes tbody tr', (filas) => {
+      filas.find((f) => f.innerText.includes('Carnet estudiantil de Carla')).querySelector('button.boton-enlace').click();
+    })]);
   await ir(diego, `/reportes/nuevo?perdido=${idCarnet}`);
   const error = await textoDe(diego, 'main');
   await captura(diego, 'hu15-reporte-retirado.png');
@@ -250,6 +300,51 @@ SECCIONES.push(async ({ sesion }) => {
   await captura(hugo, 'hu17-sin-avisos.png');
   paso(3, 'Hugo, sin avisos sin leer, ve «Avisos» sin número', barraHugo === 'Avisos' && !(await existe(hugo, '#avisosSinLeer')));
 });
+
+// ---------------------------------------------------------------------------------------------- HU-18
+SECCIONES.push(async ({ sesion }) => {
+  caso('HU-18', 'Recibir avisos cuando cambia el estado de mi reclamación');
+  const ivan = await sesion({ nombre: 'Iván Castro', correo: 'ivan.castro@epn.edu.ec' });
+  const juana = await sesion({ nombre: 'Juana Pérez', correo: 'juana.perez@epn.edu.ec' });
+  const karen = await sesion({ nombre: 'Karen Díaz', correo: 'karen.diaz@epn.edu.ec' });
+  const idEstuche = await registrarReporte(ivan, { tipo: 'ENCONTRADO', categoria: 'Útiles',
+    descripcion: 'Estuche de geometría verde', fecha: haceDias(1), punto: aMetros(300), preguntas: ['¿Qué tiene escrito?'] });
+  await reclamar(juana, idEstuche);
+  await reclamar(karen, idEstuche);
+
+  await revisarReclamacionDe(ivan, idEstuche, 'Juana Pérez');
+  await enviar(ivan, '#aceptar');
+  await ir(juana, '/avisos');
+  const avisoJuana = await textoDe(juana, '#avisos li');
+  await captura(juana, 'hu18-aviso-aceptada.png');
+  paso(1, 'Juana recibe «Su reclamación de «Estuche de geometría verde» fue aceptada»',
+    avisoJuana.includes('Su reclamación de «Estuche de geometría verde» fue aceptada'));
+
+  await revisarReclamacionDe(ivan, idEstuche, 'Karen Díaz');
+  await ivan.type('#motivo', 'El estuche tiene otro nombre escrito');
+  await enviar(ivan, '#rechazar');
+  await ir(karen, '/avisos');
+  const avisoKaren = await textoDe(karen, '#avisos li');
+  await captura(karen, 'hu18-aviso-rechazada.png');
+  paso(2, 'Karen recibe el aviso de rechazo con el motivo',
+    avisoKaren.includes('fue rechazada. Motivo: El estuche tiene otro nombre escrito'));
+
+  await revisarReclamacionDeAceptada(ivan, idEstuche);
+  await proponerEntrega(ivan, { lugar: 'Puerta de la Biblioteca Central', fecha: proximoDiaHabil('10:00') });
+  await ir(juana, '/avisos');
+  const propuesta = (await textos(juana, '#avisos li'))[0];
+  await captura(juana, 'hu18-aviso-propuesta.png');
+  await enviar(juana, '#avisos li a');
+  const llevaAlAcuerdo = await existe(juana, '#confirmarAcuerdo');
+  paso(3, 'Juana recibe el lugar y la fecha de la entrega, y el aviso la lleva al acuerdo para confirmarlo',
+    propuesta.includes('en Puerta de la Biblioteca Central el ') && llevaAlAcuerdo);
+});
+
+/** Quien encontró el objeto abre la reclamación aceptada desde el panel del reporte. */
+async function revisarReclamacionDeAceptada(page, idReporte) {
+  await ir(page, `/devoluciones?reporte=${idReporte}`);
+  await enviar(page, '#enCurso');
+}
 
 (async () => {
   fs.mkdirSync(SALIDA, { recursive: true });
