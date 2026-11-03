@@ -439,6 +439,39 @@ SECCIONES.push(async ({ sesion }) => {
     error.includes('Indique una fecha futura para la entrega.'));
 });
 
+// ---------------------------------------------------------------------------------------------- HU-21
+SECCIONES.push(async ({ sesion }) => {
+  caso('HU-21', 'Elegir un punto de entrega oficial del campus');
+  const pablo = await sesion({ nombre: 'Pablo Mena', correo: 'pablo.mena@epn.edu.ec' });
+  const rosa = await sesion({ nombre: 'Rosa Gómez', correo: 'rosa.gomez@epn.edu.ec' });
+  const { idReclamacion } = await reclamacionAceptada(pablo, rosa, 'Rosa Gómez',
+    { categoria: 'Ropa y accesorios', descripcion: 'Bufanda de lana roja', punto: aMetros(-280) });
+  const opciones = await textos(pablo, '#punto option');
+  await captura(pablo, 'hu21-selector-puntos.png');
+  await proponerEntrega(pablo, { punto: 'Biblioteca Central', fecha: proximoDiaHabil('10:00') });
+  const acuerdo = await textoDe(pablo, '#acuerdo');
+  paso(1, 'Con «Biblioteca Central» y una fecha de lunes a viernes a las 10:00, el acuerdo queda en ese punto',
+    opciones.some((o) => o.includes('Biblioteca Central · atiende de lunes a viernes, de 07:00 a 19:00'))
+    && acuerdo.includes('Biblioteca Central') && acuerdo.includes('Planta baja, mostrador de préstamo'));
+
+  const segunda = await reclamacionAceptada(pablo, rosa, 'Rosa Gómez',
+    { categoria: 'Ropa y accesorios', descripcion: 'Gorra gris de la EPN', punto: aMetros(-270) });
+  await proponerEntrega(pablo, { punto: 'Biblioteca Central', fecha: proximoDiaHabil('21:00') });
+  const error = await textoDe(pablo, 'main');
+  await captura(pablo, 'hu21-fuera-de-horario.png');
+  await ir(pablo, `/devoluciones?reclamacion=${segunda.idReclamacion}`);
+  const sinAcuerdo = await existe(pablo, '#proponer');
+  paso(2, 'A las 21:00 el sistema responde con el horario de atención y no guarda la propuesta',
+    error.includes('«Biblioteca Central» atiende de lunes a viernes, de 07:00 a 19:00.') && sinAcuerdo);
+
+  await ir(rosa, `/devoluciones?acuerdo=${idReclamacion}`);
+  const punto = await textoDe(rosa, '#punto');
+  await captura(rosa, 'hu21-acuerdo-punto.png');
+  paso(3, 'Rosa ve el nombre del punto, su referencia y su horario de atención',
+    punto.includes('Biblioteca Central') && punto.includes('Planta baja, mostrador de préstamo')
+    && punto.includes('de lunes a viernes, de 07:00 a 19:00'));
+});
+
 /** Quien encontró el objeto abre la reclamación aceptada desde el panel del reporte. */
 async function revisarReclamacionDeAceptada(page, idReporte) {
   await ir(page, `/devoluciones?reporte=${idReporte}`);
