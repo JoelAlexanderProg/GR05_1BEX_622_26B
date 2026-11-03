@@ -94,6 +94,8 @@ public class ControlConsultaReportes extends ControlBase {
         boolean esAutor = actor != null && reporte.esAutor(actor);
         request.setAttribute("esAutor", esAutor);
         request.setAttribute("puedeReclamar", reporte.esEncontrado() && reporte.estaActivo() && !esAutor);
+        // HU-15: sobre un objeto perdido activo de otra persona se puede avisar que se encontró
+        request.setAttribute("puedeAvisarHallazgo", !reporte.esEncontrado() && reporte.estaActivo() && !esAutor);
     }
 
     private FiltrosReporte leerFiltros(HttpServletRequest request) {

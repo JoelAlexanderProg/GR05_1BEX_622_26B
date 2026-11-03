@@ -33,6 +33,9 @@ public class ControlRegistroReporte extends ControlBase {
     /** Motivo con el que se rechazan las reclamaciones pendientes de un reporte retirado (HU-11). */
     public static final String MOTIVO_RETIRO = "El reporte fue retirado por su autor.";
 
+    /** HU-15: parámetro y atributo con el reporte de pérdida sobre el que se avisa un hallazgo. */
+    private static final String PARAMETRO_PERDIDO = "perdido";
+
     private final ReporteDAO reporteDAO;
     private final CategoriaDAO categoriaDAO;
     private final ReclamacionDAO reclamacionDAO;
@@ -64,6 +67,10 @@ public class ControlRegistroReporte extends ControlBase {
         if (request.getParameter("registrado") != null) {
             // SEC-01 · 13-14: mostrarConfirmacion(reporte) → reporte publicado
             request.setAttribute("reporte", reporteDAO.buscarPorId(leerId(request, "registrado")));
+        } else if (request.getParameter(PARAMETRO_PERDIDO) != null) {
+            // HU-15: «Yo lo encontré» abre el formulario precargado con los datos del objeto perdido
+            Reporte perdido = buscarPerdidoParaAvisar(actorIdentificado(request), leerId(request, PARAMETRO_PERDIDO));
+            request.setAttribute(PARAMETRO_PERDIDO, perdido);
         }
         // SEC-01 · 1-2: mostrarFormulario() → formulario disponible
         mostrarFormulario(request, response);
@@ -84,14 +91,25 @@ public class ControlRegistroReporte extends ControlBase {
         }
         // SEC-01 · 3: solicitarPublicacion(datos)
         DatosReporte datos = leerDatos(request);
+        UUID perdidoId = leerIdOpcional(request.getParameter(PARAMETRO_PERDIDO));
         try {
-            // SEC-01 · 4: registrarReporte(usuario, datos)
-            Reporte reporte = registrarReporte(actorIdentificado(request), datos);
+            // SEC-01 · 4: registrarReporte(usuario, datos); HU-15: con el reporte de pérdida, si lo hay
+            Reporte reporte = registrarReporte(actorIdentificado(request), datos, perdidoId);
             // SEC-01 · 12: reporte registrado
             redirigir(request, response, "/reportes/nuevo?registrado=" + reporte.getId());
         } catch (OperacionInvalidaException e) {
             request.setAttribute("error", e.getMessage());
+            request.setAttribute(PARAMETRO_PERDIDO, perdidoTodaviaDisponible(actor(request), perdidoId));
             mostrarFormulario(request, response);
+        }
+    }
+
+    /** HU-15: al corregir el formulario se conserva el aviso, si el reporte de pérdida sigue disponible. */
+    private Reporte perdidoTodaviaDisponible(Usuario actor, UUID perdidoId) {
+        try {
+            return perdidoId == null || actor == null ? null : buscarPerdidoParaAvisar(actor, perdidoId);
+        } catch (OperacionInvalidaException e) {
+            return null;
         }
     }
 

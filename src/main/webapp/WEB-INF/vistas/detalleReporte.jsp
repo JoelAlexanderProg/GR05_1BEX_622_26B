@@ -26,6 +26,10 @@
     <c:if test="${puedeReclamar}">
         <a class="boton" id="reclamar" href="${ctx}/reclamaciones/nueva?reporte=${detalle.id}">Reclamar objeto</a>
     </c:if>
+    <%-- HU-15: avisar al dueño de un objeto perdido que yo lo encontré --%>
+    <c:if test="${puedeAvisarHallazgo}">
+        <a class="boton" id="loEncontre" href="${ctx}/reportes/nuevo?perdido=${detalle.id}">Yo lo encontré</a>
+    </c:if>
     <c:if test="${esAutor and detalle.tipo eq 'ENCONTRADO'}">
         <a class="boton" id="verReclamaciones" href="${ctx}/devoluciones?reporte=${detalle.id}">Ver reclamaciones</a>
     </c:if>

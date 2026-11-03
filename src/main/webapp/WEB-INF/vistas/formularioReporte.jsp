@@ -46,16 +46,30 @@
             <p class="error"><c:out value="${error}"/></p>
         </c:if>
 
+        <%-- HU-15: aviso al dueño de un objeto perdido; el formulario llega precargado --%>
+        <c:if test="${not empty perdido}">
+            <p class="exito" id="avisoHallazgo">
+                Está avisando a quien perdió «<c:out value="${perdido.descripcionPublica}"/>»
+                (<c:out value="${perdido.categoria.nombre}"/>, ${perdido.fechaSuceso}). Al publicar su reporte,
+                el dueño lo verá en «Mis reportes» y podrá reclamarlo respondiendo sus preguntas.
+            </p>
+        </c:if>
+
         <%-- solicitarPublicacion(datos) --%>
         <form class="formulario ancho" method="post" action="${ctx}/reportes/nuevo">
+            <c:if test="${not empty perdido}">
+                <input type="hidden" name="perdido" value="${perdido.id}">
+            </c:if>
             <fieldset>
                 <legend>¿Qué pasó con el objeto?</legend>
                 <label class="opcion">
-                    <input type="radio" name="tipo" value="PERDIDO" required ${param.tipo eq 'PERDIDO' ? 'checked' : ''}>
+                    <input type="radio" name="tipo" value="PERDIDO" required ${param.tipo eq 'PERDIDO' ? 'checked' : ''}
+                        ${not empty perdido ? 'disabled' : ''}>
                     Lo perdí
                 </label>
                 <label class="opcion">
-                    <input type="radio" name="tipo" value="ENCONTRADO" required ${param.tipo eq 'ENCONTRADO' ? 'checked' : ''}>
+                    <input type="radio" name="tipo" value="ENCONTRADO" required
+                        ${param.tipo eq 'ENCONTRADO' or not empty perdido ? 'checked' : ''}>
                     Lo encontré
                 </label>
             </fieldset>
@@ -64,7 +78,9 @@
             <select id="categoria" name="categoria" required>
                 <option value="">Seleccione una categoría</option>
                 <c:forEach var="categoria" items="${categorias}">
-                    <option value="${categoria.id}" ${param.categoria eq categoria.id.toString() ? 'selected' : ''}>
+                    <option value="${categoria.id}"
+                        ${param.categoria eq categoria.id.toString()
+                          or (empty param.categoria and perdido.categoria.id eq categoria.id) ? 'selected' : ''}>
                         <c:out value="${categoria.nombre}"/>
                     </option>
                 </c:forEach>
