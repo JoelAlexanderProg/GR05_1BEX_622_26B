@@ -68,6 +68,10 @@ public class Reporte {
     @OneToMany(mappedBy = "reporte", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PreguntaVerificacion> preguntas = new ArrayList<>();
 
+    /** HU-15: en un objeto encontrado, el reporte de pérdida de su dueño, si quien lo encontró lo avisó. */
+    @ManyToOne
+    private Reporte reportePerdido;
+
     protected Reporte() {
     }
 
@@ -131,6 +135,23 @@ public class Reporte {
                 && !encontrado.fechaSuceso.isBefore(fechaSuceso)
                 && !encontrado.fechaSuceso.isAfter(limite)
                 && distanciaA(encontrado) <= RADIO_COINCIDENCIA_METROS;
+    }
+
+    /**
+     * HU-15: quien encontró este objeto avisa al dueño de un reporte de pérdida que lo tiene.
+     * El reporte de pérdida debe estar activo y ser de otra persona.
+     */
+    public void vincularConPerdido(Reporte perdido) {
+        if (!esEncontrado() || perdido.esEncontrado()) {
+            throw new IllegalArgumentException("Solo un objeto encontrado se vincula con un reporte de pérdida.");
+        }
+        if (!perdido.estaActivo()) {
+            throw new IllegalStateException("Este reporte de pérdida ya no está activo.");
+        }
+        if (perdido.esAutor(autor)) {
+            throw new IllegalArgumentException("No puede avisar que encontró un objeto que usted mismo reportó.");
+        }
+        reportePerdido = perdido;
     }
 
     /** HU-14: distancia en metros entre el lugar de este reporte y el de otro. */
@@ -218,5 +239,9 @@ public class Reporte {
 
     public List<PreguntaVerificacion> getPreguntas() {
         return Collections.unmodifiableList(preguntas);
+    }
+
+    public Reporte getReportePerdido() {
+        return reportePerdido;
     }
 }
