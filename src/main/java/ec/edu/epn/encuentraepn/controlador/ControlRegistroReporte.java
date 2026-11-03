@@ -1,8 +1,10 @@
 package ec.edu.epn.encuentraepn.controlador;
 
+import ec.edu.epn.encuentraepn.dao.AvisoDAO;
 import ec.edu.epn.encuentraepn.dao.CategoriaDAO;
 import ec.edu.epn.encuentraepn.dao.ReclamacionDAO;
 import ec.edu.epn.encuentraepn.dao.ReporteDAO;
+import ec.edu.epn.encuentraepn.modelo.Aviso;
 import ec.edu.epn.encuentraepn.modelo.Campus;
 import ec.edu.epn.encuentraepn.modelo.Categoria;
 import ec.edu.epn.encuentraepn.modelo.DatosReporte;
@@ -39,9 +41,10 @@ public class ControlRegistroReporte extends ControlBase {
     private final ReporteDAO reporteDAO;
     private final CategoriaDAO categoriaDAO;
     private final ReclamacionDAO reclamacionDAO;
+    private final AvisoDAO avisoDAO;
 
     public ControlRegistroReporte() {
-        this(new ReporteDAO(), new ReclamacionDAO(), new CategoriaDAO());
+        this(new ReporteDAO(), new ReclamacionDAO(), new CategoriaDAO(), new AvisoDAO());
     }
 
     /**
@@ -49,16 +52,19 @@ public class ControlRegistroReporte extends ControlBase {
      * reemplazarlos por objetos simulados.
      */
     ControlRegistroReporte(ReporteDAO reporteDAO, ReclamacionDAO reclamacionDAO) {
-        this(reporteDAO, reclamacionDAO, new CategoriaDAO());
+        this(reporteDAO, reclamacionDAO, new CategoriaDAO(), new AvisoDAO());
     }
 
     /**
-     * HU-15: también recibe el acceso a datos de las categorías, para probar el registro sin base de datos.
+     * HU-15 y HU-16: también recibe el acceso a datos de las categorías y de los avisos, para probar el registro
+     * sin base de datos.
      */
-    ControlRegistroReporte(ReporteDAO reporteDAO, ReclamacionDAO reclamacionDAO, CategoriaDAO categoriaDAO) {
+    ControlRegistroReporte(ReporteDAO reporteDAO, ReclamacionDAO reclamacionDAO, CategoriaDAO categoriaDAO,
+                           AvisoDAO avisoDAO) {
         this.reporteDAO = reporteDAO;
         this.reclamacionDAO = reclamacionDAO;
         this.categoriaDAO = categoriaDAO;
+        this.avisoDAO = avisoDAO;
     }
 
     @Override
@@ -156,7 +162,26 @@ public class ControlRegistroReporte extends ControlBase {
         reporte.publicar();
 
         // Nota de SEC-01: el registro conserva el reporte y sus preguntas
-        return reporteDAO.guardar(reporte);
+        reporteDAO.guardar(reporte);
+
+        // HU-16: los dueños de objetos perdidos que coinciden reciben un aviso
+        avisarCoincidencias(reporte);
+        return reporte;
+    }
+
+    /**
+     * HU-16: deja un aviso a cada dueño de un objeto perdido activo que coincide con el objeto encontrado
+     * (la regla es la de la HU-14). Quien encontró el objeto no se avisa a sí mismo.
+     */
+    void avisarCoincidencias(Reporte encontrado) {
+        if (!encontrado.esEncontrado()) {
+            return;
+        }
+        for (Reporte perdido : reporteDAO.listarPerdidosActivos(encontrado.getCategoria())) {
+            if (perdido.coincideCon(encontrado) && !perdido.esAutor(encontrado.getAutor())) {
+                avisoDAO.guardar(Aviso.coincidencia(perdido, encontrado));
+            }
+        }
     }
 
     /**

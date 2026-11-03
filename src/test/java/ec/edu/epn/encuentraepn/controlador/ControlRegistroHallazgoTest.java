@@ -1,5 +1,6 @@
 package ec.edu.epn.encuentraepn.controlador;
 
+import ec.edu.epn.encuentraepn.dao.AvisoDAO;
 import ec.edu.epn.encuentraepn.dao.CategoriaDAO;
 import ec.edu.epn.encuentraepn.dao.ReclamacionDAO;
 import ec.edu.epn.encuentraepn.dao.ReporteDAO;
@@ -44,6 +45,9 @@ class ControlRegistroHallazgoTest {
     @Mock
     private CategoriaDAO categoriaDAO;
 
+    @Mock
+    private AvisoDAO avisoDAO;
+
     private final Categoria llaves = new Categoria("Llaves");
     private final UUID categoriaId = UUID.randomUUID();
     private final UUID perdidoId = UUID.randomUUID();
@@ -52,7 +56,7 @@ class ControlRegistroHallazgoTest {
 
     @BeforeEach
     void preparar() {
-        control = new ControlRegistroReporte(reporteDAO, reclamacionDAO, categoriaDAO);
+        control = new ControlRegistroReporte(reporteDAO, reclamacionDAO, categoriaDAO, avisoDAO);
         when(categoriaDAO.buscarPorId(categoriaId)).thenReturn(llaves);
     }
 
@@ -66,7 +70,6 @@ class ControlRegistroHallazgoTest {
     void registraElHallazgoVinculado() {
         Reporte perdido = reportePerdido(llaves);
         when(reporteDAO.buscarPorId(perdidoId)).thenReturn(perdido);
-        when(reporteDAO.guardar(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
 
         Reporte encontrado = control.registrarReporte(diego, llavesEncontradas(), perdidoId);
 
