@@ -327,6 +327,16 @@ td.enlaces form {
     font-weight: 600;
 }
 
+/* HU-17: avisos nuevos y contador de la barra */
+.avisos li.nuevo {
+    border-left: 4px solid #1e6b3a;
+    background: #e8f4ec;
+}
+
+.barra .contador {
+    font-weight: 700;
+}
+
 @media (max-width: 760px) {
     .dos-columnas {
         grid-template-columns: 1fr;

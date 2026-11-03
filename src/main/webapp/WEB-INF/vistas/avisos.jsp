@@ -13,8 +13,10 @@
     <c:otherwise>
         <ul id="avisos" class="avisos">
             <c:forEach var="aviso" items="${avisos}">
-                <li>
-                    <small class="fecha">${fn:replace(fn:substring(aviso.fecha, 0, 16), 'T', ' ')}</small>
+                <%-- HU-17: los avisos que el usuario todavía no había visto se resaltan como nuevos --%>
+                <li class="${nuevos.contains(aviso) ? 'nuevo' : ''}">
+                    <small class="fecha">${fn:replace(fn:substring(aviso.fecha, 0, 16), 'T', ' ')}<c:if
+                            test="${nuevos.contains(aviso)}"> · <strong>Nuevo</strong></c:if></small>
                     <p><c:out value="${aviso.texto}"/></p>
                     <a href="${ctx}${aviso.enlace}">Ver</a>
                 </li>

@@ -21,7 +21,9 @@
         <c:choose>
             <c:when test="${not empty sessionScope.usuario}">
                 <%-- HU-16: bandeja de avisos del usuario identificado --%>
-                <a id="enlaceAvisos" href="${ctx}/avisos">Avisos</a>
+                <%-- HU-17: cantidad de avisos sin leer --%>
+                <a id="enlaceAvisos" href="${ctx}/avisos">Avisos<c:if test="${avisosSinLeer > 0}"> <span
+                        class="contador" id="avisosSinLeer">(${avisosSinLeer})</span></c:if></a>
                 <span><c:out value="${sessionScope.usuario.nombre}"/></span>
                 <a href="${ctx}/salir">Salir</a>
             </c:when>
