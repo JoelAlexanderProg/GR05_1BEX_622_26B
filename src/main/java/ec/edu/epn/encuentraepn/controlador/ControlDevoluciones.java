@@ -1,10 +1,12 @@
 package ec.edu.epn.encuentraepn.controlador;
 
 import ec.edu.epn.encuentraepn.dao.AvisoDAO;
+import ec.edu.epn.encuentraepn.dao.PuntoEntregaDAO;
 import ec.edu.epn.encuentraepn.dao.ReclamacionDAO;
 import ec.edu.epn.encuentraepn.dao.ReporteDAO;
 import ec.edu.epn.encuentraepn.modelo.AcuerdoEntrega;
 import ec.edu.epn.encuentraepn.modelo.Aviso;
+import ec.edu.epn.encuentraepn.modelo.PuntoEntrega;
 import ec.edu.epn.encuentraepn.modelo.Reclamacion;
 import ec.edu.epn.encuentraepn.modelo.Reporte;
 import ec.edu.epn.encuentraepn.modelo.RespuestaVerificacion;
@@ -32,9 +34,10 @@ public class ControlDevoluciones extends ControlBase {
     private final ReporteDAO reporteDAO = new ReporteDAO();
     private final ReclamacionDAO reclamacionDAO;
     private final AvisoDAO avisoDAO;
+    private final PuntoEntregaDAO puntoEntregaDAO;
 
     public ControlDevoluciones() {
-        this(new ReclamacionDAO(), new AvisoDAO());
+        this(new ReclamacionDAO(), new AvisoDAO(), new PuntoEntregaDAO());
     }
 
     /**
@@ -48,8 +51,16 @@ public class ControlDevoluciones extends ControlBase {
      * HU-18: también recibe el acceso a datos de los avisos, para probar los avisos sin base de datos.
      */
     ControlDevoluciones(ReclamacionDAO reclamacionDAO, AvisoDAO avisoDAO) {
+        this(reclamacionDAO, avisoDAO, new PuntoEntregaDAO());
+    }
+
+    /**
+     * HU-21: también recibe el acceso a datos de los puntos de entrega, para probar la propuesta sin base de datos.
+     */
+    ControlDevoluciones(ReclamacionDAO reclamacionDAO, AvisoDAO avisoDAO, PuntoEntregaDAO puntoEntregaDAO) {
         this.reclamacionDAO = reclamacionDAO;
         this.avisoDAO = avisoDAO;
+        this.puntoEntregaDAO = puntoEntregaDAO;
     }
 
     @Override
@@ -78,8 +89,9 @@ public class ControlDevoluciones extends ControlBase {
             // SEC-04 · 20: aceptación registrada
             redirigir(request, response, "/devoluciones?reclamacion=" + id);
         } else if ("proponer".equals(accion)) {
-            // SEC-04 · 21-22: proponerEntrega(datos) → proponerEntrega(actor, id, lugar, fecha)
-            proponerEntrega(actor, id, request.getParameter("lugar"), leerFechaHora(request.getParameter("fecha")));
+            // SEC-04 · 21-22: proponerEntrega(datos) → proponerEntrega(actor, id, lugar, fecha); HU-21: o un punto oficial
+            proponerEntrega(actor, id, leerIdOpcional(request.getParameter("punto")), request.getParameter("lugar"),
+                    leerFechaHora(request.getParameter("fecha")));
             // SEC-04 · 24: propuesta guardada
             redirigir(request, response, "/devoluciones?reclamacion=" + id);
         } else if ("confirmarAcuerdo".equals(accion)) {
@@ -182,15 +194,31 @@ public class ControlDevoluciones extends ControlBase {
     }
 
     public AcuerdoEntrega proponerEntrega(Usuario actor, UUID id, String lugar, LocalDateTime fecha) {
+        return proponerEntrega(actor, id, null, lugar, fecha);
+    }
+
+    /**
+     * HU-21: la entrega se propone en un punto oficial (puntoId) o en otro lugar escrito (lugar). En un punto
+     * oficial, la fecha debe estar dentro de su horario de atención.
+     */
+    public AcuerdoEntrega proponerEntrega(Usuario actor, UUID id, UUID puntoId, String lugar, LocalDateTime fecha) {
         Reclamacion reclamacion = buscarReclamacionRecibida(actor, id);
         if (!reclamacion.estaAceptada() || reclamacion.getAcuerdo() != null) {
             throw new OperacionInvalidaException("Solo se puede proponer una entrega para una reclamación aceptada sin propuesta.");
         }
-        if (lugar == null || lugar.isBlank() || fecha == null || !fecha.isAfter(ahora())) {
+        PuntoEntrega punto = puntoId == null ? null : buscarPunto(puntoId);
+        boolean sinLugar = punto == null && (lugar == null || lugar.isBlank());
+        if (sinLugar || fecha == null || !fecha.isAfter(ahora())) {
             throw new OperacionInvalidaException("Indique el lugar y una fecha futura para la entrega.");
         }
-        // SEC-04 · 23: «create» AcuerdoEntrega(reclamacion, lugar, fecha)
-        AcuerdoEntrega acuerdo = new AcuerdoEntrega(reclamacion, lugar.trim(), fecha);
+        if (punto != null && !punto.atiendeA(fecha)) {
+            throw new OperacionInvalidaException("«" + punto.getNombre() + "» atiende " + punto.getHorario()
+                    + ". Elija una fecha dentro de ese horario.");
+        }
+        // SEC-04 · 23: «create» AcuerdoEntrega(reclamacion, lugar, fecha); HU-21: o en el punto oficial
+        AcuerdoEntrega acuerdo = punto == null
+                ? new AcuerdoEntrega(reclamacion, lugar.trim(), fecha)
+                : new AcuerdoEntrega(reclamacion, punto, fecha);
         reclamacion.registrarAcuerdo(acuerdo);
         reclamacionDAO.actualizar(reclamacion);
         // HU-18: el reclamante recibe un aviso con el lugar y la fecha para confirmar el acuerdo
@@ -305,6 +333,14 @@ public class ControlDevoluciones extends ControlBase {
         request.setAttribute("pendientes", pendientes);
         request.setAttribute("enCurso", reclamacionDAO.buscarEnCurso(reporte));
         mostrar("panelDevolucion.jsp", request, response);
+    }
+
+    private PuntoEntrega buscarPunto(UUID puntoId) {
+        PuntoEntrega punto = puntoEntregaDAO.buscarPorId(puntoId);
+        if (punto == null) {
+            throw new OperacionInvalidaException("El punto de entrega indicado no existe.");
+        }
+        return punto;
     }
 
     private Reporte buscarReportePropio(Usuario actor, UUID reporteId) {

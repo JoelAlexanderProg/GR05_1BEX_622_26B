@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
@@ -27,6 +28,10 @@ public class AcuerdoEntrega {
     @Column(nullable = false)
     private String lugar;
 
+    /** HU-21: punto de entrega oficial elegido, o null si se acordó otro lugar. */
+    @ManyToOne
+    private PuntoEntrega punto;
+
     @Column(nullable = false)
     private LocalDateTime fechaPropuesta;
 
@@ -47,6 +52,12 @@ public class AcuerdoEntrega {
         this.reclamacion = reclamacion;
         this.lugar = lugar;
         this.fechaPropuesta = fechaPropuesta;
+    }
+
+    /** HU-21: acuerdo en un punto de entrega oficial; el lugar es el nombre del punto. */
+    public AcuerdoEntrega(Reclamacion reclamacion, PuntoEntrega punto, LocalDateTime fechaPropuesta) {
+        this(reclamacion, punto.getNombre(), fechaPropuesta);
+        this.punto = punto;
     }
 
     // SEC-04 · 34: confirmar(fecha)
@@ -101,6 +112,10 @@ public class AcuerdoEntrega {
 
     public String getLugar() {
         return lugar;
+    }
+
+    public PuntoEntrega getPunto() {
+        return punto;
     }
 
     public LocalDateTime getFechaPropuesta() {
